@@ -91,6 +91,7 @@ export function useGoalMutations() {
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["goals-progress"] });
     qc.invalidateQueries({ queryKey: ["goals"] });
+    qc.invalidateQueries({ queryKey: ["coach"] });
   };
 
   const create = useMutation({
