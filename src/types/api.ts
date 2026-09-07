@@ -327,6 +327,64 @@ export type SyncResult = {
   fetchedMatchIds: string[];
   syncedAt: string | null;
 };
+export type CoachStatus = "achieved" | "improving" | "worsening" | "stable";
+export type CoachFocusCategory = "deaths" | "farm" | "champion" | "role" | "laning" | "consistency";
+
+export type CoachGoalProgress = {
+  id: string;
+  metric: GoalMetric;
+  label: string;
+  comparison: GoalComparison;
+  target: number;
+  current: number | null;
+  baseline: number | null;
+  distanceToTarget: number | null;
+  status: CoachStatus;
+  progressPercent: number | null;
+  role: Role | null;
+  champion: string | null;
+  periodGames: number;
+  sampleSize: number;
+  history: Array<{ matchId: string; gameCreation: string; value: number }>;
+  lastMatchImpact: {
+    previousValue: number | null;
+    currentValue: number | null;
+    delta: number | null;
+    improved: boolean | null;
+  };
+};
+
+export type CoachFocus = {
+  category: CoachFocusCategory;
+  title: string;
+  current: number | null;
+  target: number | null;
+  baseline: number | null;
+  sampleSize: number;
+  trend: CoachStatus;
+  distanceToTarget: number | null;
+};
+
+export type CoachResponse = {
+  window: { games: number; role: Role | "ALL" };
+  baseline: { games: number };
+  primaryFocus: CoachFocus | null;
+  secondaryFocus: CoachFocus | null;
+  strength: CoachFocus | null;
+  goals: CoachGoalProgress[];
+  recentForm: TimeWindowSummary;
+  recommendedChampionFocus: {
+    championName: string;
+    games: number;
+    winRate: number;
+    kda: number;
+    avgDeaths: number;
+    avgCsPerMinute: number;
+    reason: string;
+    confidence: "medium" | "high";
+  } | null;
+};
+
 export type ChampionDetailResponse = {
   champion: ChampionStats;
   recentMatches?: MatchRow[];

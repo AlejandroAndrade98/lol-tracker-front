@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChampionsRouteImport } from './routes/champions'
+import { Route as FocusRouteImport } from './routes/focus'
 import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as MatchesRouteImport } from './routes/matches'
+import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as RolesRouteImport } from './routes/roles'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -30,6 +32,11 @@ const ChampionsRoute = ChampionsRouteImport.update({
   path: '/champions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FocusRoute = FocusRouteImport.update({
+  id: '/focus',
+  path: '/focus',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GoalsRoute = GoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
@@ -43,6 +50,11 @@ const InsightsRoute = InsightsRouteImport.update({
 const MatchesRoute = MatchesRouteImport.update({
   id: '/matches',
   path: '/matches',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OverviewRoute = OverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProgressRoute = ProgressRouteImport.update({
@@ -74,9 +86,11 @@ const MatchesMatchIdRoute = MatchesMatchIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/champions': typeof ChampionsRouteWithChildren
+  '/focus': typeof FocusRoute
   '/goals': typeof GoalsRoute
   '/insights': typeof InsightsRoute
   '/matches': typeof MatchesRouteWithChildren
+  '/overview': typeof OverviewRoute
   '/progress': typeof ProgressRoute
   '/roles': typeof RolesRoute
   '/settings': typeof SettingsRoute
@@ -86,9 +100,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/champions': typeof ChampionsRouteWithChildren
+  '/focus': typeof FocusRoute
   '/goals': typeof GoalsRoute
   '/insights': typeof InsightsRoute
   '/matches': typeof MatchesRouteWithChildren
+  '/overview': typeof OverviewRoute
   '/progress': typeof ProgressRoute
   '/roles': typeof RolesRoute
   '/settings': typeof SettingsRoute
@@ -99,9 +115,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/champions': typeof ChampionsRouteWithChildren
+  '/focus': typeof FocusRoute
   '/goals': typeof GoalsRoute
   '/insights': typeof InsightsRoute
   '/matches': typeof MatchesRouteWithChildren
+  '/overview': typeof OverviewRoute
   '/progress': typeof ProgressRoute
   '/roles': typeof RolesRoute
   '/settings': typeof SettingsRoute
@@ -113,9 +131,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/champions'
+    | '/focus'
     | '/goals'
     | '/insights'
     | '/matches'
+    | '/overview'
     | '/progress'
     | '/roles'
     | '/settings'
@@ -125,9 +145,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/champions'
+    | '/focus'
     | '/goals'
     | '/insights'
     | '/matches'
+    | '/overview'
     | '/progress'
     | '/roles'
     | '/settings'
@@ -137,9 +159,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/champions'
+    | '/focus'
     | '/goals'
     | '/insights'
     | '/matches'
+    | '/overview'
     | '/progress'
     | '/roles'
     | '/settings'
@@ -150,9 +174,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChampionsRoute: typeof ChampionsRouteWithChildren
+  FocusRoute: typeof FocusRoute
   GoalsRoute: typeof GoalsRoute
   InsightsRoute: typeof InsightsRoute
   MatchesRoute: typeof MatchesRouteWithChildren
+  OverviewRoute: typeof OverviewRoute
   ProgressRoute: typeof ProgressRoute
   RolesRoute: typeof RolesRoute
   SettingsRoute: typeof SettingsRoute
@@ -174,6 +200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChampionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/focus': {
+      id: '/focus'
+      path: '/focus'
+      fullPath: '/focus'
+      preLoaderRoute: typeof FocusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/goals': {
       id: '/goals'
       path: '/goals'
@@ -193,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/matches'
       fullPath: '/matches'
       preLoaderRoute: typeof MatchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/overview': {
+      id: '/overview'
+      path: '/overview'
+      fullPath: '/overview'
+      preLoaderRoute: typeof OverviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/progress': {
@@ -259,9 +299,11 @@ const MatchesRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChampionsRoute: ChampionsRouteWithChildren,
+  FocusRoute: FocusRoute,
   GoalsRoute: GoalsRoute,
   InsightsRoute: InsightsRoute,
   MatchesRoute: MatchesRouteWithChildren,
+  OverviewRoute: OverviewRoute,
   ProgressRoute: ProgressRoute,
   RolesRoute: RolesRoute,
   SettingsRoute: SettingsRoute,

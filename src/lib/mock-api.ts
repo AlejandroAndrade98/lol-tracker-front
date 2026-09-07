@@ -13,6 +13,8 @@ import {
 } from "@/mocks/data";
 import type {
   ChampionDetailResponse,
+  CoachGoalProgress,
+  CoachResponse,
   DeathAnalyticsResponse,
   FarmAnalyticsResponse,
   FarmRoleAnalytics,
@@ -217,6 +219,171 @@ function buildPhasePerformance(matches: MockMatch[]): PhasePerformanceResponse {
   };
 }
 
+function coachMetric(goal: GoalRow, matches: MockMatch[]): number | null {
+  if (!matches.length) return null;
+  const summary = summarize(matches);
+  if (goal.metric === "avgDeaths") return summary.avgDeaths;
+  if (goal.metric === "csPerMinute" || goal.metric === "avgCsPerMinute")
+    return summary.avgCsPerMinute;
+  if (goal.metric === "winRate") return summary.winRate;
+  if (goal.metric === "kda") return summary.kda;
+  if (goal.metric === "avgKillParticipation") return summary.avgKillParticipation;
+  return new Set(matches.map((match) => match.championName)).size;
+}
+
+function scopedCoachMatches(goal: GoalRow, role: Role | "ALL"): MockMatch[] {
+  const selectedRole = goal.role ?? (role === "ALL" ? null : role);
+  return mockMatches.filter(
+    (match) =>
+      (selectedRole === null || match.role === selectedRole) &&
+      (goal.champion === null || match.championName === goal.champion),
+  );
+}
+
+function mockCoachGoal(
+  goal: GoalRow,
+  role: Role | "ALL",
+  baselineGames: number,
+): CoachGoalProgress {
+  const ordered = [...scopedCoachMatches(goal, role)].reverse();
+  const currentMatches = ordered.slice(-goal.periodGames);
+  const history = ordered
+    .flatMap((_, index) => {
+      if (index < goal.periodGames - 1) return [];
+      const window = ordered.slice(index - goal.periodGames + 1, index + 1);
+      const match = ordered[index];
+      const value = coachMetric(goal, window);
+      return match && value !== null
+        ? [{ matchId: match.riotMatchId, gameCreation: match.playedAt, value }]
+        : [];
+    })
+    .slice(-30);
+  const current = coachMetric(goal, currentMatches);
+  const prior = ordered
+    .slice(0, Math.max(0, ordered.length - currentMatches.length))
+    .slice(-baselineGames);
+  const baseline = coachMetric(goal, prior);
+  const previous = history.at(-2)?.value ?? null;
+  const latest = history.at(-1)?.value ?? current;
+  const delta = previous === null || latest === null ? null : round(latest - previous);
+  const lowerIsBetter = goal.comparison === "lte" || goal.comparison === "lt";
+  const improved =
+    delta === null ? null : delta === 0 ? false : lowerIsBetter ? delta < 0 : delta > 0;
+  const distance =
+    current === null
+      ? null
+      : Math.max(0, lowerIsBetter ? current - goal.target : goal.target - current);
+  const baselineDistance =
+    baseline === null
+      ? null
+      : Math.max(0, lowerIsBetter ? baseline - goal.target : goal.target - baseline);
+  const progressPercent =
+    distance === null || baselineDistance === null
+      ? null
+      : baselineDistance === 0
+        ? distance === 0
+          ? 100
+          : 0
+        : Math.max(
+            0,
+            Math.min(100, round(((baselineDistance - distance) / baselineDistance) * 100)),
+          );
+  const achieved = distance === 0;
+  return {
+    id: goal.id,
+    metric: goal.metric,
+    label:
+      goal.metric === "avgDeaths"
+        ? "Deaths/game"
+        : goal.metric === "csPerMinute" || goal.metric === "avgCsPerMinute"
+          ? "CS/min"
+          : goal.metric,
+    comparison: goal.comparison,
+    target: goal.target,
+    current,
+    baseline,
+    distanceToTarget: distance,
+    status: achieved
+      ? "achieved"
+      : improved === true
+        ? "improving"
+        : improved === false && delta !== 0
+          ? "worsening"
+          : "stable",
+    progressPercent,
+    role: goal.role ?? (role === "ALL" ? null : role),
+    champion: goal.champion,
+    periodGames: goal.periodGames,
+    sampleSize: currentMatches.length,
+    history,
+    lastMatchImpact: { previousValue: previous, currentValue: latest, delta, improved },
+  };
+}
+
+function mockCoach(params?: {
+  games?: number;
+  role?: Role | "ALL";
+  baselineGames?: number;
+}): CoachResponse {
+  const role = params?.role ?? "MIDDLE";
+  const baselineGames = params?.baselineGames ?? 100;
+  const activeGoals = goals
+    .filter((goal) => goal.active && (role === "ALL" || goal.role === null || goal.role === role))
+    .map((goal) => mockCoachGoal(goal, role, baselineGames));
+  const actionable = activeGoals.filter(
+    (goal) => goal.current !== null && goal.distanceToTarget !== 0,
+  );
+  const primary = actionable[0] ?? null;
+  const secondary = actionable[1] ?? null;
+  const roleMatches =
+    role === "ALL" ? mockMatches : mockMatches.filter((match) => match.role === role);
+  const champions = championStats(roleMatches.slice(0, params?.games ?? 20));
+  const champion =
+    champions.filter((item) => item.games >= 10).sort((a, b) => b.winRate - a.winRate)[0] ?? null;
+  const toFocus = (goal: CoachGoalProgress) => ({
+    category: goal.metric === "avgDeaths" ? ("deaths" as const) : ("farm" as const),
+    title: goal.label,
+    current: goal.current,
+    target: goal.target,
+    baseline: goal.baseline,
+    sampleSize: goal.sampleSize,
+    trend: goal.status,
+    distanceToTarget: goal.distanceToTarget,
+  });
+  return {
+    window: { games: Math.min(params?.games ?? 20, roleMatches.length), role },
+    baseline: { games: baselineGames },
+    primaryFocus: primary ? toFocus(primary) : null,
+    secondaryFocus: secondary ? toFocus(secondary) : null,
+    strength: champion
+      ? {
+          category: "champion",
+          title: champion.championName + " is the strongest reliable sample",
+          current: champion.winRate,
+          target: null,
+          baseline: null,
+          sampleSize: champion.games,
+          trend: "stable",
+          distanceToTarget: null,
+        }
+      : null,
+    goals: activeGoals,
+    recentForm: summarize(roleMatches.slice(0, params?.games ?? 20)),
+    recommendedChampionFocus: champion
+      ? {
+          championName: champion.championName,
+          games: champion.games,
+          winRate: champion.winRate,
+          kda: champion.kda,
+          avgDeaths: champion.avgDeaths,
+          avgCsPerMinute: champion.avgCsPerMinute,
+          reason: "Strongest reliable sample currently",
+          confidence: champion.games >= 20 ? "high" : "medium",
+        }
+      : null,
+  };
+}
+
 export const mockApi: LolTrackerApi = {
   getHealth: () =>
     delay({ ok: true as const, status: "mock", timestamp: new Date().toISOString() }),
@@ -367,6 +534,7 @@ export const mockApi: LolTrackerApi = {
   },
 
   getInsights: (p) => delay({ insights: buildInsights(filterMatches(p)) }),
+  getCoach: (params) => delay(mockCoach(params)),
   getGoals: () => delay({ goals }),
   getGoalsProgress: () => delay({ goals: goals.map(goalProgress) }),
 

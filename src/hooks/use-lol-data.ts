@@ -4,6 +4,11 @@ import { api } from "@/lib/api";
 import type { WindowParams } from "@/lib/api-types";
 import type { GoalInput, Role } from "@/types/api";
 
+export function useCoach(
+  params: { games?: number; role?: Role | "ALL"; baselineGames?: number } = {},
+) {
+  return useQuery({ queryKey: ["coach", params], queryFn: () => api.getCoach(params) });
+}
 export function useHealth() {
   return useQuery({ queryKey: ["health"], queryFn: () => api.getHealth(), retry: 1 });
 }

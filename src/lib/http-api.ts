@@ -1,4 +1,5 @@
 import { getChampion, getChampions } from "@/api/champions";
+import { getCoach } from "@/api/coach";
 import { getDeaths } from "@/api/deaths";
 import { getFarm } from "@/api/farm";
 import { getGoals, getGoalsProgress, createGoal, updateGoal, deleteGoal } from "@/api/goals";
@@ -29,6 +30,7 @@ export const httpApi: LolTrackerApi = {
   getFarm,
   getSessions,
   getInsights,
+  getCoach,
   getGoals,
   getGoalsProgress,
   createGoal,

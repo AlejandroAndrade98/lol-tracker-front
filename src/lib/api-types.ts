@@ -1,6 +1,7 @@
 import type {
   ChampionAnalyticsResponse,
   ChampionDetailResponse,
+  CoachResponse,
   DeathAnalyticsResponse,
   FarmAnalyticsResponse,
   GoalInput,
@@ -40,6 +41,11 @@ export interface LolTrackerApi {
   getFarm(params?: WindowParams): Promise<FarmAnalyticsResponse>;
   getSessions(params?: { days?: number }): Promise<SessionsResponse>;
   getInsights(params?: WindowParams): Promise<InsightsResponse>;
+  getCoach(params?: {
+    games?: number;
+    role?: Role | "ALL";
+    baselineGames?: number;
+  }): Promise<CoachResponse>;
   getGoals(): Promise<GoalsResponse>;
   getGoalsProgress(): Promise<GoalsProgressResponse>;
   createGoal(input: GoalInput): Promise<{ goal: GoalRow }>;

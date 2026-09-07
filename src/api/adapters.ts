@@ -1,6 +1,11 @@
 import type {
   ChampionAnalyticsResponse,
   ChampionStats,
+  CoachFocus,
+  CoachGoalProgress,
+  CoachResponse,
+  GoalComparison,
+  GoalMetric,
   Insight,
   InsightsResponse,
   MatchRow,
@@ -409,5 +414,113 @@ export function adaptSyncResult(raw: unknown): SyncResult {
     timelinesInserted: optionalNumber(dto, "timelinesInserted"),
     fetchedMatchIds,
     syncedAt: optionalString(dto, "syncedAt", "updatedAt", "updated_at"),
+  };
+}
+
+export function adaptCoachResponse(raw: unknown): CoachResponse {
+  const endpoint = "/api/coach";
+  const dto = record(raw, endpoint);
+  const window = record(dto["window"], endpoint, "window");
+  const baseline = record(dto["baseline"], endpoint, "baseline");
+  const role = requiredString(window, endpoint, "role");
+  if (!["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY", "ALL"].includes(role)) {
+    throw new ApiContractError(endpoint, "window.role");
+  }
+
+  const status = (value: unknown, field: string): CoachGoalProgress["status"] => {
+    if (
+      value === "achieved" ||
+      value === "improving" ||
+      value === "worsening" ||
+      value === "stable"
+    ) {
+      return value;
+    }
+    throw new ApiContractError(endpoint, field);
+  };
+  const focus = (value: unknown, field: string): CoachFocus | null => {
+    if (value === null || value === undefined) return null;
+    const item = record(value, endpoint, field);
+    const category = requiredString(item, endpoint, "category");
+    if (!["deaths", "farm", "champion", "role", "laning", "consistency"].includes(category)) {
+      throw new ApiContractError(endpoint, field + ".category");
+    }
+    return {
+      category: category as CoachFocus["category"],
+      title: requiredString(item, endpoint, "title"),
+      current: optionalNumber(item, "current"),
+      target: optionalNumber(item, "target"),
+      baseline: optionalNumber(item, "baseline"),
+      sampleSize: requiredNumber(item, endpoint, "sampleSize"),
+      trend: status(item["trend"], field + ".trend"),
+      distanceToTarget: optionalNumber(item, "distanceToTarget"),
+    };
+  };
+  const goal = (value: unknown): CoachGoalProgress => {
+    const item = record(value, endpoint, "goal");
+    const history = Array.isArray(item["history"]) ? item["history"] : [];
+    const impact = record(item["lastMatchImpact"], endpoint, "goal.lastMatchImpact");
+    return {
+      id: requiredString(item, endpoint, "id"),
+      metric: requiredString(item, endpoint, "metric") as GoalMetric,
+      label: requiredString(item, endpoint, "label"),
+      comparison: requiredString(item, endpoint, "comparison") as GoalComparison,
+      target: requiredNumber(item, endpoint, "target"),
+      current: optionalNumber(item, "current"),
+      baseline: optionalNumber(item, "baseline"),
+      distanceToTarget: optionalNumber(item, "distanceToTarget"),
+      status: status(item["status"], "goal.status"),
+      progressPercent: optionalNumber(item, "progressPercent"),
+      role: optionalString(item, "role") as Role | null,
+      champion: optionalString(item, "champion"),
+      periodGames: requiredNumber(item, endpoint, "periodGames"),
+      sampleSize: requiredNumber(item, endpoint, "sampleSize"),
+      history: history.map((point) => {
+        const item = record(point, endpoint, "goal.history item");
+        return {
+          matchId: requiredString(item, endpoint, "matchId"),
+          gameCreation: requiredString(item, endpoint, "gameCreation"),
+          value: requiredNumber(item, endpoint, "value"),
+        };
+      }),
+      lastMatchImpact: {
+        previousValue: optionalNumber(impact, "previousValue"),
+        currentValue: optionalNumber(impact, "currentValue"),
+        delta: optionalNumber(impact, "delta"),
+        improved:
+          impact["improved"] === null ? null : requiredBoolean(impact, endpoint, "improved"),
+      },
+    };
+  };
+  const champion = dto["recommendedChampionFocus"];
+  const championFocus =
+    champion === null || champion === undefined
+      ? null
+      : record(champion, endpoint, "recommendedChampionFocus");
+
+  return {
+    window: {
+      games: requiredNumber(window, endpoint, "games"),
+      role: role as CoachResponse["window"]["role"],
+    },
+    baseline: { games: requiredNumber(baseline, endpoint, "games") },
+    primaryFocus: focus(dto["primaryFocus"], "primaryFocus"),
+    secondaryFocus: focus(dto["secondaryFocus"], "secondaryFocus"),
+    strength: focus(dto["strength"], "strength"),
+    goals: Array.isArray(dto["goals"]) ? dto["goals"].map(goal) : [],
+    recentForm: adaptSummary(dto["recentForm"], endpoint),
+    recommendedChampionFocus: championFocus
+      ? {
+          championName: requiredString(championFocus, endpoint, "championName"),
+          games: requiredNumber(championFocus, endpoint, "games"),
+          winRate: requiredNumber(championFocus, endpoint, "winRate"),
+          kda: requiredNumber(championFocus, endpoint, "kda"),
+          avgDeaths: requiredNumber(championFocus, endpoint, "avgDeaths"),
+          avgCsPerMinute: requiredNumber(championFocus, endpoint, "avgCsPerMinute"),
+          reason: requiredString(championFocus, endpoint, "reason"),
+          confidence:
+            requiredString(championFocus, endpoint, "confidence") === "high" ? "high" : "medium",
+        }
+      : null,
   };
 }

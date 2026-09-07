@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { OverviewPage } from "@/pages/overview";
+import { Navigate, createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/")({ component: OverviewPage });
+export const Route = createFileRoute("/")({
+  component: () => <Navigate to="/focus" replace />,
+});

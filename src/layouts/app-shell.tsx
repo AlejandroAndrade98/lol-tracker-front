@@ -17,7 +17,8 @@ import { relativeTime, tierLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { to: "/", label: "Overview", icon: Home },
+  { to: "/focus", label: "Focus", icon: Gauge },
+  { to: "/overview", label: "Overview", icon: Home },
   { to: "/matches", label: "Matches", icon: ListOrdered },
   { to: "/champions", label: "Champions", icon: Trophy },
   { to: "/progress", label: "Progress", icon: BarChart3 },
@@ -56,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav className="mt-8 flex flex-1 flex-col gap-1" aria-label="Primary navigation">
           {nav.map((item) => {
             const active =
-              item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
+              location.pathname === item.to || location.pathname.startsWith(item.to + "/");
             const Icon = item.icon;
             return (
               <Link
@@ -110,12 +111,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-7 border-t border-border bg-sidebar/95 px-1 py-2 backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-border bg-sidebar/95 px-1 py-2 backdrop-blur lg:hidden"
         aria-label="Mobile navigation"
       >
         {nav.map((item) => {
           const active =
-            item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
+            location.pathname === item.to || location.pathname.startsWith(item.to + "/");
           const Icon = item.icon;
           return (
             <Link
