@@ -1,6 +1,6 @@
 import { apiRequest, toWindowParams } from "./client";
-import type { PhasePerformanceResponse } from "@/types/api";
+import { adaptPhasesResponse } from "./adapters";
 import type { WindowParams } from "@/lib/api-types";
 
 export const getPhases = (params?: WindowParams) =>
-  apiRequest<PhasePerformanceResponse>("/api/performance/phases", toWindowParams(params));
+  apiRequest("/api/performance/phases", toWindowParams(params), undefined, adaptPhasesResponse);

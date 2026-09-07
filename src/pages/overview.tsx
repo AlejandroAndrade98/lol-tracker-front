@@ -233,7 +233,7 @@ function selectFocus(insights: Insight[]): Insight[] {
 }
 
 function rankMovement(
-  history: Array<{ tier: string; division: string; league_points: number }>,
+  history: Array<{ tier: string; division: string; leaguePoints: number }>,
 ): number | null {
   if (history.length < 2) return null;
   const first = history[0];
@@ -252,9 +252,9 @@ function rankMovement(
     "CHALLENGER",
   ];
   const divisions = ["IV", "III", "II", "I"];
-  const toOrdinal = (item: { tier: string; division: string; league_points: number }) =>
+  const toOrdinal = (item: { tier: string; division: string; leaguePoints: number }) =>
     Math.max(0, tiers.indexOf(item.tier.toUpperCase())) * 400 +
     Math.max(0, divisions.indexOf(item.division.toUpperCase())) * 100 +
-    item.league_points;
+    item.leaguePoints;
   return toOrdinal(last) - toOrdinal(first);
 }

@@ -1,13 +1,9 @@
 import { apiRequest } from "./client";
-import type {
-  HealthResponse,
-  PlayerResponse,
-  RankResponse,
-  RankHistoryResponse,
-} from "@/types/api";
+import { adaptPlayerResponse, adaptRankHistoryResponse, adaptRankResponse } from "./adapters";
+import type { HealthResponse } from "@/types/api";
 
 export const getHealth = () => apiRequest<HealthResponse>("/health");
-export const getPlayer = () => apiRequest<PlayerResponse>("/api/player");
-export const getRank = () => apiRequest<RankResponse>("/api/rank");
+export const getPlayer = () => apiRequest("/api/player", undefined, undefined, adaptPlayerResponse);
+export const getRank = () => apiRequest("/api/rank", undefined, undefined, adaptRankResponse);
 export const getRankHistory = (params?: { days?: number; all?: boolean }) =>
-  apiRequest<RankHistoryResponse>("/api/rank/history", params);
+  apiRequest("/api/rank/history", params, undefined, adaptRankHistoryResponse);

@@ -39,12 +39,12 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
             <Surface>
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <ChampionAvatar championName={detail.summary.champion_name} />
+                  <ChampionAvatar championName={detail.summary.championName} />
                   <div>
-                    <h2 className="text-xl font-semibold">{detail.summary.champion_name}</h2>
+                    <h2 className="text-xl font-semibold">{detail.summary.championName}</h2>
                     <p className="text-sm text-muted-foreground">
-                      {roleLabel(detail.summary.role)} · {shortDate(detail.summary.played_at)} ·{" "}
-                      {duration(detail.summary.duration_seconds)}
+                      {roleLabel(detail.summary.role)} · {shortDate(detail.summary.playedAt)} ·{" "}
+                      {duration(detail.summary.durationSeconds)}
                     </p>
                   </div>
                 </div>
@@ -60,12 +60,12 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
                     value={`${detail.playerStats.kills}/${detail.playerStats.deaths}/${detail.playerStats.assists}`}
                   />
                   <Fact label="KDA" value={nf(kda(detail.playerStats), 2)} />
-                  <Fact label="CS/min" value={nf(detail.playerStats.cs_per_minute, 2)} />
-                  <Fact label="Vision" value={nf(detail.playerStats.vision_score, 0)} />
+                  <Fact label="CS/min" value={nf(detail.playerStats.csPerMinute, 2)} />
+                  <Fact label="Vision" value={nf(detail.playerStats.visionScore, 0)} />
                   <Fact label="Damage" value={nf(detail.playerStats.damage, 0)} />
                   <Fact label="Gold" value={nf(detail.playerStats.gold, 0)} />
-                  <Fact label="Damage/min" value={nf(detail.playerStats.damage_per_minute, 0)} />
-                  <Fact label="Gold/min" value={nf(detail.playerStats.gold_per_minute, 0)} />
+                  <Fact label="Damage/min" value={nf(detail.playerStats.damagePerMinute, 0)} />
+                  <Fact label="Gold/min" value={nf(detail.playerStats.goldPerMinute, 0)} />
                 </div>
               </Surface>
               {hasOpponent(detail.opponentStats) ? (
@@ -94,16 +94,16 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
             {timeline && hasDeaths(timeline) ? (
               <Surface title="Deaths">
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-                  <Fact label="Before 10" value={nf(timeline.deaths_before_10, 1)} />
-                  <Fact label="Before 15" value={nf(timeline.deaths_before_15, 1)} />
-                  <Fact label="15-25" value={nf(timeline.deaths_15_to_25, 1)} />
-                  <Fact label="After 25" value={nf(timeline.deaths_after_25, 1)} />
+                  <Fact label="Before 10" value={nf(timeline.deathsBefore10, 1)} />
+                  <Fact label="Before 15" value={nf(timeline.deathsBefore15, 1)} />
+                  <Fact label="15-25" value={nf(timeline.deaths15To25, 1)} />
+                  <Fact label="After 25" value={nf(timeline.deathsAfter25, 1)} />
                   <Fact
                     label="First death"
                     value={
-                      timeline.first_death_minute === null
+                      timeline.firstDeathMinute === null
                         ? "No data"
-                        : `${timeline.first_death_minute} min`
+                        : `${timeline.firstDeathMinute} min`
                     }
                   />
                 </div>
@@ -129,22 +129,16 @@ function TimelineSurface({
   return (
     <Surface title={title}>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-7">
-        <Fact label="CS" value={nf(is10 ? timeline.cs_at_10 : timeline.cs_at_15, 0)} />
-        <Fact label="Gold" value={nf(is10 ? timeline.gold_at_10 : timeline.gold_at_15, 0)} />
-        <Fact label="XP" value={nf(is10 ? timeline.xp_at_10 : timeline.xp_at_15, 0)} />
-        <Fact label="Level" value={nf(is10 ? timeline.level_at_10 : timeline.level_at_15, 0)} />
-        <Fact
-          label="CS diff"
-          value={nf(is10 ? timeline.cs_diff_at_10 : timeline.cs_diff_at_15, 0)}
-        />
+        <Fact label="CS" value={nf(is10 ? timeline.csAt10 : timeline.csAt15, 0)} />
+        <Fact label="Gold" value={nf(is10 ? timeline.goldAt10 : timeline.goldAt15, 0)} />
+        <Fact label="XP" value={nf(is10 ? timeline.xpAt10 : timeline.xpAt15, 0)} />
+        <Fact label="Level" value={nf(is10 ? timeline.levelAt10 : timeline.levelAt15, 0)} />
+        <Fact label="CS diff" value={nf(is10 ? timeline.csDiffAt10 : timeline.csDiffAt15, 0)} />
         <Fact
           label="Gold diff"
-          value={nf(is10 ? timeline.gold_diff_at_10 : timeline.gold_diff_at_15, 0)}
+          value={nf(is10 ? timeline.goldDiffAt10 : timeline.goldDiffAt15, 0)}
         />
-        <Fact
-          label="XP diff"
-          value={nf(is10 ? timeline.xp_diff_at_10 : timeline.xp_diff_at_15, 0)}
-        />
+        <Fact label="XP diff" value={nf(is10 ? timeline.xpDiffAt10 : timeline.xpDiffAt15, 0)} />
       </div>
     </Surface>
   );
@@ -165,34 +159,34 @@ function hasOpponent(value: {
 
 function hasTimelineAt10(timeline: MatchTimelineMetricRow) {
   return [
-    timeline.cs_at_10,
-    timeline.gold_at_10,
-    timeline.xp_at_10,
-    timeline.level_at_10,
-    timeline.cs_diff_at_10,
-    timeline.gold_diff_at_10,
-    timeline.xp_diff_at_10,
+    timeline.csAt10,
+    timeline.goldAt10,
+    timeline.xpAt10,
+    timeline.levelAt10,
+    timeline.csDiffAt10,
+    timeline.goldDiffAt10,
+    timeline.xpDiffAt10,
   ].some((item) => item !== null);
 }
 
 function hasTimelineAt15(timeline: MatchTimelineMetricRow) {
   return [
-    timeline.cs_at_15,
-    timeline.gold_at_15,
-    timeline.xp_at_15,
-    timeline.level_at_15,
-    timeline.cs_diff_at_15,
-    timeline.gold_diff_at_15,
-    timeline.xp_diff_at_15,
+    timeline.csAt15,
+    timeline.goldAt15,
+    timeline.xpAt15,
+    timeline.levelAt15,
+    timeline.csDiffAt15,
+    timeline.goldDiffAt15,
+    timeline.xpDiffAt15,
   ].some((item) => item !== null);
 }
 
 function hasDeaths(timeline: MatchTimelineMetricRow) {
   return [
-    timeline.deaths_before_10,
-    timeline.deaths_before_15,
-    timeline.deaths_15_to_25,
-    timeline.deaths_after_25,
-    timeline.first_death_minute,
+    timeline.deathsBefore10,
+    timeline.deathsBefore15,
+    timeline.deaths15To25,
+    timeline.deathsAfter25,
+    timeline.firstDeathMinute,
   ].some((item) => item !== null);
 }

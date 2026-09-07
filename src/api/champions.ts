@@ -1,9 +1,10 @@
 import { apiRequest, toWindowParams } from "./client";
-import type { ChampionAnalyticsResponse, ChampionDetailResponse } from "@/types/api";
+import { adaptChampionsResponse } from "./adapters";
+import type { ChampionDetailResponse } from "@/types/api";
 import type { WindowParams } from "@/lib/api-types";
 
 export const getChampions = (params?: WindowParams) =>
-  apiRequest<ChampionAnalyticsResponse>("/api/champions", toWindowParams(params));
+  apiRequest("/api/champions", toWindowParams(params), undefined, adaptChampionsResponse);
 
 export const getChampion = (championName: string, params?: WindowParams) =>
   apiRequest<ChampionDetailResponse>(

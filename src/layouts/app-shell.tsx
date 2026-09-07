@@ -31,12 +31,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const player = usePlayer();
   const rank = useRank();
   const account = player.data?.player
-    ? `${player.data.player.game_name}#${player.data.player.tag_line}`
+    ? `${player.data.player.gameName}#${player.data.player.tagLine}`
     : "Jordan Belfort#LAN29";
   const rankText = rank.data?.rank
-    ? tierLabel(rank.data.rank.tier, rank.data.rank.division, rank.data.rank.league_points)
+    ? tierLabel(rank.data.rank.tier, rank.data.rank.division, rank.data.rank.leaguePoints)
     : "Rank unavailable";
-  const updatedAt = player.data?.player.last_synced_at ?? rank.data?.rank?.captured_at ?? null;
+  const updatedAt = player.data?.player.lastSyncedAt ?? rank.data?.rank?.capturedAt ?? null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">

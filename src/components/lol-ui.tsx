@@ -444,8 +444,8 @@ export function MatchTable({
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2">
-                    <ChampionAvatar championName={match.champion_name} />
-                    <span className="font-medium">{match.champion_name}</span>
+                    <ChampionAvatar championName={match.championName} />
+                    <span className="font-medium">{match.championName}</span>
                   </div>
                 </td>
                 <td className="px-3 py-3 text-muted-foreground">{roleLabel(match.role)}</td>
@@ -454,11 +454,11 @@ export function MatchTable({
                 </td>
                 <td className="px-3 py-3 tabular-nums">{nf(kda, 2)}</td>
                 <td className="px-3 py-3 tabular-nums">{match.cs}</td>
-                <td className="px-3 py-3 tabular-nums">{nf(match.cs_per_minute, 2)}</td>
-                <td className="px-3 py-3 tabular-nums">{nf(match.damage_per_minute, 0)}</td>
-                <td className="px-3 py-3 tabular-nums">{nf(match.gold_per_minute, 0)}</td>
-                <td className="px-3 py-3 tabular-nums">{duration(match.duration_seconds)}</td>
-                <td className="px-3 py-3 text-muted-foreground">{shortDate(match.played_at)}</td>
+                <td className="px-3 py-3 tabular-nums">{nf(match.csPerMinute, 2)}</td>
+                <td className="px-3 py-3 tabular-nums">{nf(match.damagePerMinute, 0)}</td>
+                <td className="px-3 py-3 tabular-nums">{nf(match.goldPerMinute, 0)}</td>
+                <td className="px-3 py-3 tabular-nums">{duration(match.durationSeconds)}</td>
+                <td className="px-3 py-3 text-muted-foreground">{shortDate(match.playedAt)}</td>
               </>
             );
             return compact ? (
@@ -557,9 +557,9 @@ export function ChampionTable({ champions }: { champions: ChampionStats[] }) {
 
 export function RankChart({ history }: { history: RankedSnapshotRow[] }) {
   const data = history.map((snap) => ({
-    date: shortDate(snap.captured_at),
-    value: rankToOrdinal(snap.tier, snap.division, snap.league_points),
-    label: tierLabel(snap.tier, snap.division, snap.league_points),
+    date: shortDate(snap.capturedAt),
+    value: rankToOrdinal(snap.tier, snap.division, snap.leaguePoints),
+    label: tierLabel(snap.tier, snap.division, snap.leaguePoints),
     wl: `${snap.wins}W / ${snap.losses}L`,
   }));
   return (

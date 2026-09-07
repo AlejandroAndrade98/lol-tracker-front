@@ -99,7 +99,7 @@ let goals: GoalRow[] = [...mockGoals];
 function goalProgress(goal: GoalRow): GoalProgress {
   let ms = mockMatches;
   if (goal.role) ms = ms.filter((m) => m.role === goal.role);
-  if (goal.champion) ms = ms.filter((m) => m.champion_name === goal.champion);
+  if (goal.champion) ms = ms.filter((m) => m.championName === goal.champion);
   ms = ms.slice(0, goal.periodGames);
   const s = summarize(ms);
 
@@ -110,7 +110,7 @@ function goalProgress(goal: GoalRow): GoalProgress {
   else if (goal.metric === "kda") currentValue = s.kda;
   else if (goal.metric === "avgKillParticipation") currentValue = s.avgKillParticipation;
   else if (goal.metric === "championPool")
-    currentValue = new Set(ms.map((m) => m.champion_name)).size;
+    currentValue = new Set(ms.map((m) => m.championName)).size;
   else currentValue = s.avgCsPerMinute;
 
   const achieved =
@@ -138,20 +138,16 @@ function goalProgress(goal: GoalRow): GoalProgress {
 
 function buildPhasePerformance(matches: MockMatch[]): PhasePerformanceResponse {
   const timelineMatches = matches.filter((m) => m.timeline);
-  const avgCsDiff10 = avgOrNull(timelineMatches.map((m) => m.timeline?.cs_diff_at_10 ?? null));
-  const avgCsDiff15 = avgOrNull(timelineMatches.map((m) => m.timeline?.cs_diff_at_15 ?? null));
-  const avgGoldDiff10 = avgOrNull(timelineMatches.map((m) => m.timeline?.gold_diff_at_10 ?? null));
-  const avgGoldDiff15 = avgOrNull(timelineMatches.map((m) => m.timeline?.gold_diff_at_15 ?? null));
-  const avgXpDiff10 = avgOrNull(timelineMatches.map((m) => m.timeline?.xp_diff_at_10 ?? null));
-  const avgXpDiff15 = avgOrNull(timelineMatches.map((m) => m.timeline?.xp_diff_at_15 ?? null));
-  const deathsBefore10 = avgOrNull(
-    timelineMatches.map((m) => m.timeline?.deaths_before_10 ?? null),
-  );
-  const deathsBefore15 = avgOrNull(
-    timelineMatches.map((m) => m.timeline?.deaths_before_15 ?? null),
-  );
-  const midDeaths = avgOrNull(timelineMatches.map((m) => m.timeline?.deaths_15_to_25 ?? null));
-  const lateDeaths = avgOrNull(timelineMatches.map((m) => m.timeline?.deaths_after_25 ?? null));
+  const avgCsDiff10 = avgOrNull(timelineMatches.map((m) => m.timeline?.csDiffAt10 ?? null));
+  const avgCsDiff15 = avgOrNull(timelineMatches.map((m) => m.timeline?.csDiffAt15 ?? null));
+  const avgGoldDiff10 = avgOrNull(timelineMatches.map((m) => m.timeline?.goldDiffAt10 ?? null));
+  const avgGoldDiff15 = avgOrNull(timelineMatches.map((m) => m.timeline?.goldDiffAt15 ?? null));
+  const avgXpDiff10 = avgOrNull(timelineMatches.map((m) => m.timeline?.xpDiffAt10 ?? null));
+  const avgXpDiff15 = avgOrNull(timelineMatches.map((m) => m.timeline?.xpDiffAt15 ?? null));
+  const deathsBefore10 = avgOrNull(timelineMatches.map((m) => m.timeline?.deathsBefore10 ?? null));
+  const deathsBefore15 = avgOrNull(timelineMatches.map((m) => m.timeline?.deathsBefore15 ?? null));
+  const midDeaths = avgOrNull(timelineMatches.map((m) => m.timeline?.deaths15To25 ?? null));
+  const lateDeaths = avgOrNull(timelineMatches.map((m) => m.timeline?.deathsAfter25 ?? null));
   const summary = summarize(matches);
   const enough = timelineMatches.length >= 10;
 
@@ -231,7 +227,7 @@ export const mockApi: LolTrackerApi = {
     const history = p?.all
       ? mockRankHistory
       : mockRankHistory.filter(
-          (r) => new Date(r.captured_at).getTime() >= Date.now() - (p?.days ?? 90) * 86400000,
+          (r) => new Date(r.capturedAt).getTime() >= Date.now() - (p?.days ?? 90) * 86400000,
         );
     return delay({ player: mockPlayer, history });
   },
@@ -263,7 +259,7 @@ export const mockApi: LolTrackerApi = {
       },
       consistency: {
         deathStdDev: stdDev(current.map((m) => m.deaths)),
-        csPerMinuteStdDev: stdDev(current.map((m) => m.cs_per_minute)),
+        csPerMinuteStdDev: stdDev(current.map((m) => m.csPerMinute)),
         kdaStdDev: stdDev(current.map((m) => (m.kills + m.assists) / Math.max(1, m.deaths))),
         score: Math.max(0, Math.min(100, round(100 - stdDev(current.map((m) => m.deaths)) * 9, 0))),
       },
@@ -286,7 +282,7 @@ export const mockApi: LolTrackerApi = {
 
   getMatch: (matchId) => {
     const match =
-      mockMatches.find((m) => m.id === matchId || m.riot_match_id === matchId) ?? mockMatches[0]!;
+      mockMatches.find((m) => m.id === matchId || m.riotMatchId === matchId) ?? mockMatches[0]!;
     return delay({
       summary: match,
       playerStats: match,
@@ -296,8 +292,8 @@ export const mockApi: LolTrackerApi = {
         kills: Math.max(0, match.deaths - 1),
         deaths: match.kills,
         assists: Math.max(1, match.assists - 2),
-        cs: match.timeline?.cs_at_15 ? Math.round(match.cs * 0.95) : null,
-        csPerMinute: Math.max(0, match.cs_per_minute - 0.3),
+        cs: match.timeline?.csAt15 ? Math.round(match.cs * 0.95) : null,
+        csPerMinute: Math.max(0, match.csPerMinute - 0.3),
         gold: Math.round(match.gold * 0.97),
         damage: Math.round(match.damage * 0.92),
       },
@@ -312,7 +308,7 @@ export const mockApi: LolTrackerApi = {
     const champion =
       stats.find((c) => c.championName.toLowerCase() === championName.toLowerCase()) ?? stats[0]!;
     const recentMatches = mockMatches
-      .filter((m) => m.champion_name === champion.championName)
+      .filter((m) => m.championName === champion.championName)
       .slice(0, 12);
     const response: ChampionDetailResponse = { champion, recentMatches };
     return delay(response);
@@ -327,11 +323,11 @@ export const mockApi: LolTrackerApi = {
     const gte9 = ms.filter((m) => m.deaths >= 9);
     const res: DeathAnalyticsResponse = {
       avgDeaths: summarize(ms).avgDeaths,
-      avgDeathsBefore10: avgOrNull(ms.map((m) => m.timeline?.deaths_before_10 ?? null)),
-      avgDeathsBefore15: avgOrNull(ms.map((m) => m.timeline?.deaths_before_15 ?? null)),
-      avgDeaths15To25: avgOrNull(ms.map((m) => m.timeline?.deaths_15_to_25 ?? null)),
-      avgDeathsAfter25: avgOrNull(ms.map((m) => m.timeline?.deaths_after_25 ?? null)),
-      firstDeathAvgMinute: avgOrNull(ms.map((m) => m.timeline?.first_death_minute ?? null)),
+      avgDeathsBefore10: avgOrNull(ms.map((m) => m.timeline?.deathsBefore10 ?? null)),
+      avgDeathsBefore15: avgOrNull(ms.map((m) => m.timeline?.deathsBefore15 ?? null)),
+      avgDeaths15To25: avgOrNull(ms.map((m) => m.timeline?.deaths15To25 ?? null)),
+      avgDeathsAfter25: avgOrNull(ms.map((m) => m.timeline?.deathsAfter25 ?? null)),
+      firstDeathAvgMinute: avgOrNull(ms.map((m) => m.timeline?.firstDeathMinute ?? null)),
       winRateWhenDeathsLTE5: winRateOrNull(lte5),
       winRateWhenDeaths6To8: winRateOrNull(six),
       winRateWhenDeathsGTE9: winRateOrNull(gte9),
@@ -350,15 +346,15 @@ export const mockApi: LolTrackerApi = {
       byRole[role] = {
         games: ms.length,
         avgCsPerMinute: summarize(ms).avgCsPerMinute,
-        avgCsAt10: avgOrNull(ms.map((m) => m.timeline?.cs_at_10 ?? null)),
-        avgCsAt15: avgOrNull(ms.map((m) => m.timeline?.cs_at_15 ?? null)),
-        avgCsDiffAt10: avgOrNull(ms.map((m) => m.timeline?.cs_diff_at_10 ?? null)),
-        avgCsDiffAt15: avgOrNull(ms.map((m) => m.timeline?.cs_diff_at_15 ?? null)),
-        winRateWhenCsPerMinuteGTE8: winRateOrNull(ms.filter((m) => m.cs_per_minute >= 8)),
+        avgCsAt10: avgOrNull(ms.map((m) => m.timeline?.csAt10 ?? null)),
+        avgCsAt15: avgOrNull(ms.map((m) => m.timeline?.csAt15 ?? null)),
+        avgCsDiffAt10: avgOrNull(ms.map((m) => m.timeline?.csDiffAt10 ?? null)),
+        avgCsDiffAt15: avgOrNull(ms.map((m) => m.timeline?.csDiffAt15 ?? null)),
+        winRateWhenCsPerMinuteGTE8: winRateOrNull(ms.filter((m) => m.csPerMinute >= 8)),
         winRateWhenCsPerMinute7To8: winRateOrNull(
-          ms.filter((m) => m.cs_per_minute >= 7 && m.cs_per_minute < 8),
+          ms.filter((m) => m.csPerMinute >= 7 && m.csPerMinute < 8),
         ),
-        winRateWhenCsPerMinuteLT7: winRateOrNull(ms.filter((m) => m.cs_per_minute < 7)),
+        winRateWhenCsPerMinuteLT7: winRateOrNull(ms.filter((m) => m.csPerMinute < 7)),
       };
     }
     return delay({ byRole });
@@ -366,7 +362,7 @@ export const mockApi: LolTrackerApi = {
 
   getSessions: (p) => {
     const cutoff = Date.now() - (p?.days ?? 30) * 86400000;
-    const ms = mockMatches.filter((m) => new Date(m.played_at).getTime() >= cutoff);
+    const ms = mockMatches.filter((m) => new Date(m.playedAt).getTime() >= cutoff);
     return delay({ sessions: buildSessions(ms) });
   },
 
@@ -377,7 +373,7 @@ export const mockApi: LolTrackerApi = {
   createGoal: (input: GoalInput) => {
     const goal: GoalRow = {
       id: `goal-${Date.now()}`,
-      created_at: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       ...input,
     };
     goals = [goal, ...goals];

@@ -55,6 +55,7 @@ export async function apiRequest<T>(
   path: string,
   params?: QueryParams,
   init?: RequestInit,
+  adapt?: (raw: unknown) => T,
 ): Promise<T> {
   const controller = new AbortController();
   const timeout = globalThis.setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
@@ -80,7 +81,7 @@ export async function apiRequest<T>(
       );
     }
 
-    return body as T;
+    return adapt ? adapt(body) : (body as T);
   } catch (error) {
     if (error instanceof ApiError) throw error;
     if (error instanceof DOMException && error.name === "AbortError") {

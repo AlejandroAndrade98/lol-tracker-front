@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import type { SessionsResponse } from "@/types/api";
+import { adaptSessionsResponse } from "./adapters";
 
 export const getSessions = (params?: { days?: number }) =>
-  apiRequest<SessionsResponse>("/api/sessions", { days: params?.days });
+  apiRequest("/api/sessions", { days: params?.days }, undefined, adaptSessionsResponse);

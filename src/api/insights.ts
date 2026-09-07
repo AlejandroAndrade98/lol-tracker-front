@@ -1,6 +1,6 @@
 import { apiRequest, toWindowParams } from "./client";
-import type { InsightsResponse } from "@/types/api";
+import { adaptInsightsResponse } from "./adapters";
 import type { WindowParams } from "@/lib/api-types";
 
 export const getInsights = (params?: WindowParams) =>
-  apiRequest<InsightsResponse>("/api/insights", toWindowParams(params));
+  apiRequest("/api/insights", toWindowParams(params), undefined, adaptInsightsResponse);

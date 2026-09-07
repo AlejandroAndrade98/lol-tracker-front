@@ -61,7 +61,7 @@ export function MatchesPage() {
                       <Link
                         to="/matches/$matchId"
                         params={{ matchId: match.id }}
-                        aria-label={`Open ${match.champion_name} match`}
+                        aria-label={`Open ${match.championName} match`}
                       >
                         <MatchResult win={match.win} />
                       </Link>
@@ -72,8 +72,8 @@ export function MatchesPage() {
                         params={{ matchId: match.id }}
                         className="flex items-center gap-2 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        <ChampionAvatar championName={match.champion_name} />
-                        {match.champion_name}
+                        <ChampionAvatar championName={match.championName} />
+                        {match.championName}
                       </Link>
                     </td>
                     <td className="px-3 py-3 text-muted-foreground">{roleLabel(match.role)}</td>
@@ -82,13 +82,11 @@ export function MatchesPage() {
                     </td>
                     <td className="px-3 py-3 tabular-nums">{nf(kda(match), 2)}</td>
                     <td className="px-3 py-3 tabular-nums">{match.cs}</td>
-                    <td className="px-3 py-3 tabular-nums">{nf(match.cs_per_minute, 2)}</td>
-                    <td className="px-3 py-3 tabular-nums">{nf(match.damage_per_minute, 0)}</td>
-                    <td className="px-3 py-3 tabular-nums">{nf(match.gold_per_minute, 0)}</td>
-                    <td className="px-3 py-3 tabular-nums">{duration(match.duration_seconds)}</td>
-                    <td className="px-3 py-3 text-muted-foreground">
-                      {shortDate(match.played_at)}
-                    </td>
+                    <td className="px-3 py-3 tabular-nums">{nf(match.csPerMinute, 2)}</td>
+                    <td className="px-3 py-3 tabular-nums">{nf(match.damagePerMinute, 0)}</td>
+                    <td className="px-3 py-3 tabular-nums">{nf(match.goldPerMinute, 0)}</td>
+                    <td className="px-3 py-3 tabular-nums">{duration(match.durationSeconds)}</td>
+                    <td className="px-3 py-3 text-muted-foreground">{shortDate(match.playedAt)}</td>
                   </tr>
                 ))}
               </tbody>

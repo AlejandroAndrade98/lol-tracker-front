@@ -300,7 +300,7 @@ function buildTrend(matches: MatchRow[], metric: Metric) {
   return chunks
     .filter((chunk) => chunk.length)
     .map((chunk) => ({
-      date: shortDate(chunk[chunk.length - 1]!.played_at),
+      date: shortDate(chunk[chunk.length - 1]!.playedAt),
       value: metricValue(chunk, metric),
     }));
 }
@@ -310,9 +310,9 @@ function metricValue(matches: MatchRow[], metric: Metric) {
   if (metric === "winRate") return (matches.filter((m) => m.win).length / matches.length) * 100;
   if (metric === "kda") return avg(matches.map(kda));
   if (metric === "deaths") return avg(matches.map((m) => m.deaths));
-  if (metric === "cs") return avg(matches.map((m) => m.cs_per_minute));
-  if (metric === "damage") return avg(matches.map((m) => m.damage_per_minute));
-  return avg(matches.map((m) => m.gold_per_minute));
+  if (metric === "cs") return avg(matches.map((m) => m.csPerMinute));
+  if (metric === "damage") return avg(matches.map((m) => m.damagePerMinute));
+  return avg(matches.map((m) => m.goldPerMinute));
 }
 
 function phaseLabel(name: string) {

@@ -24,13 +24,13 @@ const rnd = makeRandom(20260906);
 
 export const mockPlayer: PlayerRow = {
   id: "player-1",
-  game_name: "Jordan Belfort",
-  tag_line: "LAN29",
+  gameName: "Jordan Belfort",
+  tagLine: "LAN29",
   platform: "LA1",
   region: "LAN",
-  summoner_level: 412,
-  profile_icon_id: 4568,
-  last_synced_at: new Date(Date.now() - 22 * 60 * 1000).toISOString(),
+  summonerLevel: 412,
+  profileIconId: 4568,
+  lastSyncedAt: new Date(Date.now() - 22 * 60 * 1000).toISOString(),
 };
 
 const MID_CHAMPS = ["Ahri", "Orianna", "Syndra", "Viktor", "Sylas", "Akali", "Zed"];
@@ -96,49 +96,49 @@ function buildMatches(count: number): MockMatch[] {
     const hasTimeline = rnd() > 0.12;
     const timeline: MatchTimelineMetricRow | null = hasTimeline
       ? {
-          cs_at_10: role === "UTILITY" ? null : Math.round(60 + rnd() * 25),
-          cs_at_15: role === "UTILITY" ? null : Math.round(100 + rnd() * 40),
-          cs_diff_at_10: role === "UTILITY" ? null : Math.round(-14 + rnd() * 28),
-          cs_diff_at_15: role === "UTILITY" ? null : Math.round(-20 + rnd() * 40),
-          gold_at_10: Math.round(3100 + rnd() * 700),
-          gold_at_15: Math.round(5200 + rnd() * 1200),
-          gold_diff_at_10: Math.round(-400 + rnd() * 900),
-          gold_diff_at_15: Math.round(-700 + rnd() * 1500),
-          xp_at_10: Math.round(4200 + rnd() * 700),
-          xp_at_15: Math.round(7200 + rnd() * 1200),
-          xp_diff_at_10: Math.round(-350 + rnd() * 700),
-          xp_diff_at_15: Math.round(-600 + rnd() * 1200),
-          level_at_10: 8 + Math.round(rnd()),
-          level_at_15: 11 + Math.round(rnd()),
-          deaths_before_10: Math.round(rnd() * 2),
-          deaths_before_15: Math.round(rnd() * 3),
-          deaths_15_to_25: round(rnd() * 3, 0),
-          deaths_after_25: Math.round(rnd() * 2),
-          first_death_minute: round(6 + rnd() * 14, 1),
-          solo_kills: Math.round(rnd() * 2),
+          csAt10: role === "UTILITY" ? null : Math.round(60 + rnd() * 25),
+          csAt15: role === "UTILITY" ? null : Math.round(100 + rnd() * 40),
+          csDiffAt10: role === "UTILITY" ? null : Math.round(-14 + rnd() * 28),
+          csDiffAt15: role === "UTILITY" ? null : Math.round(-20 + rnd() * 40),
+          goldAt10: Math.round(3100 + rnd() * 700),
+          goldAt15: Math.round(5200 + rnd() * 1200),
+          goldDiffAt10: Math.round(-400 + rnd() * 900),
+          goldDiffAt15: Math.round(-700 + rnd() * 1500),
+          xpAt10: Math.round(4200 + rnd() * 700),
+          xpAt15: Math.round(7200 + rnd() * 1200),
+          xpDiffAt10: Math.round(-350 + rnd() * 700),
+          xpDiffAt15: Math.round(-600 + rnd() * 1200),
+          levelAt10: 8 + Math.round(rnd()),
+          levelAt15: 11 + Math.round(rnd()),
+          deathsBefore10: Math.round(rnd() * 2),
+          deathsBefore15: Math.round(rnd() * 3),
+          deaths15To25: round(rnd() * 3, 0),
+          deathsAfter25: Math.round(rnd() * 2),
+          firstDeathMinute: round(6 + rnd() * 14, 1),
+          soloKills: Math.round(rnd() * 2),
         }
       : null;
 
     matches.push({
       id: `m-${i}`,
-      riot_match_id: `LA1_${5300000000 + i}`,
-      champion_id: null,
-      champion_name: champion,
+      riotMatchId: `LA1_${5300000000 + i}`,
+      championId: null,
+      championName: champion,
       role,
       win,
       kills,
       deaths,
       assists,
       cs,
-      cs_per_minute: csPerMinute,
+      csPerMinute: csPerMinute,
       gold: Math.round(goldPerMinute * minutes),
-      gold_per_minute: goldPerMinute,
+      goldPerMinute: goldPerMinute,
       damage: Math.round(damagePerMinute * minutes),
-      damage_per_minute: damagePerMinute,
-      vision_score: round(18 + rnd() * 24, 0),
-      kill_participation: round(0.45 + rnd() * 0.3, 2),
-      duration_seconds: duration,
-      played_at: new Date(cursor).toISOString(),
+      damagePerMinute: damagePerMinute,
+      visionScore: round(18 + rnd() * 24, 0),
+      killParticipation: round(0.45 + rnd() * 0.3, 2),
+      durationSeconds: duration,
+      playedAt: new Date(cursor).toISOString(),
       timeline,
       opponent,
     });
@@ -185,14 +185,14 @@ function buildRankHistory(): RankedSnapshotRow[] {
 
     history.push({
       id: `snap-${i}`,
-      player_id: mockPlayer.id,
+      playerId: mockPlayer.id,
       queue: "RANKED_SOLO_5x5",
       tier: TIERS[tierIndex]!,
       division: DIVISIONS[divisionIndex]!,
-      league_points: lp,
+      leaguePoints: lp,
       wins,
       losses,
-      captured_at: new Date(Date.now() - i * 24 * 3600 * 1000).toISOString(),
+      capturedAt: new Date(Date.now() - i * 24 * 3600 * 1000).toISOString(),
     });
   }
 
@@ -228,12 +228,12 @@ export function summarize(matches: MockMatch[]): TimeWindowSummary {
     avgDeaths: deaths,
     avgAssists: assists,
     kda: round((kills + assists) / Math.max(1, deaths), 2),
-    avgCsPerMinute: avg(matches.map((m) => m.cs_per_minute)),
-    avgDamagePerMinute: avg(matches.map((m) => m.damage_per_minute)),
-    avgGoldPerMinute: avg(matches.map((m) => m.gold_per_minute)),
-    avgKillParticipation: avgOrNull(matches.map((m) => m.kill_participation)),
+    avgCsPerMinute: avg(matches.map((m) => m.csPerMinute)),
+    avgDamagePerMinute: avg(matches.map((m) => m.damagePerMinute)),
+    avgGoldPerMinute: avg(matches.map((m) => m.goldPerMinute)),
+    avgKillParticipation: avgOrNull(matches.map((m) => m.killParticipation)),
     avgVisionScorePerMinute: avgOrNull(
-      matches.map((m) => (m.vision_score ? m.vision_score / (m.duration_seconds / 60) : null)),
+      matches.map((m) => (m.visionScore ? m.visionScore / (m.durationSeconds / 60) : null)),
     ),
   };
 }
@@ -241,7 +241,7 @@ export function summarize(matches: MockMatch[]): TimeWindowSummary {
 export function championStats(matches: MockMatch[]): ChampionStats[] {
   const groups = new Map<string, MockMatch[]>();
   for (const m of matches) {
-    const key = `${m.champion_name}|${m.role}`;
+    const key = `${m.championName}|${m.role}`;
     groups.set(key, [...(groups.get(key) ?? []), m]);
   }
 
@@ -263,22 +263,22 @@ export function championStats(matches: MockMatch[]): ChampionStats[] {
         avgDeaths: deaths,
         avgAssists: assists,
         kda: round((kills + assists) / Math.max(1, deaths), 2),
-        avgCsPerMinute: avg(ms.map((m) => m.cs_per_minute)),
-        avgCsAt10: avgOrNull(ms.map((m) => m.timeline?.cs_at_10 ?? null)),
-        avgCsAt15: avgOrNull(ms.map((m) => m.timeline?.cs_at_15 ?? null)),
-        avgCsDiffAt10: avgOrNull(ms.map((m) => m.timeline?.cs_diff_at_10 ?? null)),
-        avgCsDiffAt15: avgOrNull(ms.map((m) => m.timeline?.cs_diff_at_15 ?? null)),
-        avgGoldDiffAt10: avgOrNull(ms.map((m) => m.timeline?.gold_diff_at_10 ?? null)),
-        avgGoldDiffAt15: avgOrNull(ms.map((m) => m.timeline?.gold_diff_at_15 ?? null)),
-        avgDamagePerMinute: avg(ms.map((m) => m.damage_per_minute)),
-        avgGoldPerMinute: avg(ms.map((m) => m.gold_per_minute)),
-        avgKillParticipation: avgOrNull(ms.map((m) => m.kill_participation)),
+        avgCsPerMinute: avg(ms.map((m) => m.csPerMinute)),
+        avgCsAt10: avgOrNull(ms.map((m) => m.timeline?.csAt10 ?? null)),
+        avgCsAt15: avgOrNull(ms.map((m) => m.timeline?.csAt15 ?? null)),
+        avgCsDiffAt10: avgOrNull(ms.map((m) => m.timeline?.csDiffAt10 ?? null)),
+        avgCsDiffAt15: avgOrNull(ms.map((m) => m.timeline?.csDiffAt15 ?? null)),
+        avgGoldDiffAt10: avgOrNull(ms.map((m) => m.timeline?.goldDiffAt10 ?? null)),
+        avgGoldDiffAt15: avgOrNull(ms.map((m) => m.timeline?.goldDiffAt15 ?? null)),
+        avgDamagePerMinute: avg(ms.map((m) => m.damagePerMinute)),
+        avgGoldPerMinute: avg(ms.map((m) => m.goldPerMinute)),
+        avgKillParticipation: avgOrNull(ms.map((m) => m.killParticipation)),
         avgVisionScorePerMinute: avgOrNull(
-          ms.map((m) => (m.vision_score ? m.vision_score / (m.duration_seconds / 60) : null)),
+          ms.map((m) => (m.visionScore ? m.visionScore / (m.durationSeconds / 60) : null)),
         ),
-        avgSoloKills: avgOrNull(ms.map((m) => m.timeline?.solo_kills ?? null)),
-        avgDeathsBefore10: avgOrNull(ms.map((m) => m.timeline?.deaths_before_10 ?? null)),
-        avgDeaths15To25: avgOrNull(ms.map((m) => m.timeline?.deaths_15_to_25 ?? null)),
+        avgSoloKills: avgOrNull(ms.map((m) => m.timeline?.soloKills ?? null)),
+        avgDeathsBefore10: avgOrNull(ms.map((m) => m.timeline?.deathsBefore10 ?? null)),
+        avgDeaths15To25: avgOrNull(ms.map((m) => m.timeline?.deaths15To25 ?? null)),
         firstBloodRate: round(rnd() * 0.25, 2),
       } satisfies ChampionStats;
     })
@@ -287,7 +287,7 @@ export function championStats(matches: MockMatch[]): ChampionStats[] {
 
 export function buildSessions(matches: MockMatch[]): SessionSummary[] {
   const ordered = [...matches].sort(
-    (a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime(),
+    (a, b) => new Date(a.playedAt).getTime() - new Date(b.playedAt).getTime(),
   );
   const sessions: MockMatch[][] = [];
   let current: MockMatch[] = [];
@@ -299,8 +299,8 @@ export function buildSessions(matches: MockMatch[]): SessionSummary[] {
     }
     const last = current[current.length - 1]!;
     const gapMinutes =
-      (new Date(m.played_at).getTime() -
-        (new Date(last.played_at).getTime() + last.duration_seconds * 1000)) /
+      (new Date(m.playedAt).getTime() -
+        (new Date(last.playedAt).getTime() + last.durationSeconds * 1000)) /
       60000;
     if (gapMinutes > 90) {
       sessions.push(current);
@@ -314,10 +314,10 @@ export function buildSessions(matches: MockMatch[]): SessionSummary[] {
   return sessions
     .map((ms, index) => {
       const wins = ms.filter((m) => m.win).length;
-      const start = new Date(ms[0]!.played_at);
+      const start = new Date(ms[0]!.playedAt);
       const lastMatch = ms[ms.length - 1]!;
       const end = new Date(
-        new Date(lastMatch.played_at).getTime() + lastMatch.duration_seconds * 1000,
+        new Date(lastMatch.playedAt).getTime() + lastMatch.durationSeconds * 1000,
       );
       const kills = avg(ms.map((m) => m.kills));
       const deaths = avg(ms.map((m) => m.deaths));
@@ -331,11 +331,11 @@ export function buildSessions(matches: MockMatch[]): SessionSummary[] {
         wins,
         losses: ms.length - wins,
         winRate: round((wins / ms.length) * 100, 1),
-        champions: [...new Set(ms.map((m) => m.champion_name))],
+        champions: [...new Set(ms.map((m) => m.championName))],
         roles: [...new Set(ms.map((m) => m.role))],
         avgKda: round((kills + assists) / Math.max(1, deaths), 2),
         avgDeaths: deaths,
-        avgCsPerMinute: avg(ms.map((m) => m.cs_per_minute)),
+        avgCsPerMinute: avg(ms.map((m) => m.csPerMinute)),
       } satisfies SessionSummary;
     })
     .reverse();
@@ -343,8 +343,8 @@ export function buildSessions(matches: MockMatch[]): SessionSummary[] {
 
 export function buildInsights(matches: MockMatch[]): Insight[] {
   const summary = summarize(matches);
-  const midGameDeaths = avgOrNull(matches.map((m) => m.timeline?.deaths_15_to_25 ?? null));
-  const csDiff10 = avgOrNull(matches.map((m) => m.timeline?.cs_diff_at_10 ?? null));
+  const midGameDeaths = avgOrNull(matches.map((m) => m.timeline?.deaths15To25 ?? null));
+  const csDiff10 = avgOrNull(matches.map((m) => m.timeline?.csDiffAt10 ?? null));
 
   return [
     {
@@ -409,7 +409,7 @@ export function buildInsights(matches: MockMatch[]): Insight[] {
       evidence: `Last ${matches.length} games`,
       sampleSize: matches.length,
       confidence: "low",
-      currentValue: new Set(matches.map((m) => m.champion_name)).size,
+      currentValue: new Set(matches.map((m) => m.championName)).size,
       targetValue: 3,
       unit: "champions",
     },
@@ -426,7 +426,7 @@ export const mockGoals: GoalRow[] = [
     champion: null,
     periodGames: 20,
     active: true,
-    created_at: new Date(Date.now() - 12 * 24 * 3600 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 12 * 24 * 3600 * 1000).toISOString(),
   },
   {
     id: "goal-2",
@@ -437,7 +437,7 @@ export const mockGoals: GoalRow[] = [
     champion: null,
     periodGames: 20,
     active: true,
-    created_at: new Date(Date.now() - 20 * 24 * 3600 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 20 * 24 * 3600 * 1000).toISOString(),
   },
   {
     id: "goal-3",
@@ -448,7 +448,7 @@ export const mockGoals: GoalRow[] = [
     champion: null,
     periodGames: 50,
     active: true,
-    created_at: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
   },
   {
     id: "goal-4",
@@ -459,6 +459,6 @@ export const mockGoals: GoalRow[] = [
     champion: null,
     periodGames: 50,
     active: true,
-    created_at: new Date(Date.now() - 6 * 24 * 3600 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 6 * 24 * 3600 * 1000).toISOString(),
   },
 ];

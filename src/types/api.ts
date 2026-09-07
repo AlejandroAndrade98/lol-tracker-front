@@ -17,70 +17,70 @@ export const ROLE_LABELS: Record<Role, string> = {
 
 export type PlayerRow = {
   id: string;
-  game_name: string;
-  tag_line: string;
+  gameName: string;
+  tagLine: string;
   platform: string;
   region: string;
-  summoner_level: number | null;
-  profile_icon_id: number | null;
-  last_synced_at: string | null;
+  summonerLevel: number | null;
+  profileIconId: number | null;
+  lastSyncedAt: string | null;
 };
 
 export type RankedSnapshotRow = {
   id: string;
-  player_id: string;
+  playerId: string;
   queue: string;
   tier: string;
   division: string;
-  league_points: number;
+  leaguePoints: number;
   wins: number;
   losses: number;
-  captured_at: string;
+  capturedAt: string;
 };
 
 export type MatchRow = {
   id: string;
-  riot_match_id: string;
-  champion_id: number | null;
-  champion_name: string;
+  riotMatchId: string;
+  championId: number | null;
+  championName: string;
   role: string;
   win: boolean;
   kills: number;
   deaths: number;
   assists: number;
   cs: number;
-  cs_per_minute: number;
+  csPerMinute: number;
   gold: number;
-  gold_per_minute: number;
+  goldPerMinute: number;
   damage: number;
-  damage_per_minute: number;
-  vision_score: number | null;
-  kill_participation: number | null;
-  duration_seconds: number;
-  played_at: string;
+  damagePerMinute: number;
+  visionScore: number | null;
+  killParticipation: number | null;
+  durationSeconds: number;
+  playedAt: string;
 };
 
 export type MatchTimelineMetricRow = {
-  cs_at_10: number | null;
-  cs_at_15: number | null;
-  cs_diff_at_10: number | null;
-  cs_diff_at_15: number | null;
-  gold_at_10: number | null;
-  gold_at_15: number | null;
-  gold_diff_at_10: number | null;
-  gold_diff_at_15: number | null;
-  xp_at_10: number | null;
-  xp_at_15: number | null;
-  xp_diff_at_10: number | null;
-  xp_diff_at_15: number | null;
-  level_at_10: number | null;
-  level_at_15: number | null;
-  deaths_before_10: number | null;
-  deaths_before_15: number | null;
-  deaths_15_to_25: number | null;
-  deaths_after_25: number | null;
-  first_death_minute: number | null;
-  solo_kills: number | null;
+  csAt10: number | null;
+  csAt15: number | null;
+  csDiffAt10: number | null;
+  csDiffAt15: number | null;
+  goldAt10: number | null;
+  goldAt15: number | null;
+  goldDiffAt10: number | null;
+  goldDiffAt15: number | null;
+  xpAt10: number | null;
+  xpAt15: number | null;
+  xpDiffAt10: number | null;
+  xpDiffAt15: number | null;
+  levelAt10: number | null;
+  levelAt15: number | null;
+  deathsBefore10: number | null;
+  deathsBefore15: number | null;
+  deaths15To25: number | null;
+  deathsAfter25: number | null;
+  firstDeathMinute: number | null;
+  soloKills: number | null;
 };
 
 export type TimeWindowSummary = {
@@ -164,7 +164,7 @@ export type GoalRow = {
   champion: string | null;
   periodGames: number;
   active: boolean;
-  created_at: string;
+  createdAt: string;
 };
 
 export type GoalProgress = {
