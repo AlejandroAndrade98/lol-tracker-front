@@ -391,5 +391,11 @@ export const mockApi: LolTrackerApi = {
     return delay({ ok: true as const });
   },
 
-  sync: () => delay({ ok: true as const, syncedAt: new Date().toISOString() }),
+  sync: () =>
+    delay({
+      newMatchesInserted: 0,
+      timelinesInserted: 0,
+      fetchedMatchIds: [],
+      syncedAt: new Date().toISOString(),
+    }),
 };

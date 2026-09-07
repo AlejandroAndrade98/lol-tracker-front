@@ -321,6 +321,12 @@ export type HealthResponse = {
   status?: string;
   timestamp?: string;
 };
+export type SyncResult = {
+  newMatchesInserted: number | null;
+  timelinesInserted: number | null;
+  fetchedMatchIds: string[];
+  syncedAt: string | null;
+};
 export type ChampionDetailResponse = {
   champion: ChampionStats;
   recentMatches?: MatchRow[];

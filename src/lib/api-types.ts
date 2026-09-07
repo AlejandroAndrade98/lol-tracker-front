@@ -19,6 +19,7 @@ import type {
   Role,
   RolesResponse,
   SessionsResponse,
+  SyncResult,
 } from "@/types/api";
 
 export type WindowParams = { games?: number; role?: Role | null; includeSupport?: boolean };
@@ -44,7 +45,7 @@ export interface LolTrackerApi {
   createGoal(input: GoalInput): Promise<{ goal: GoalRow }>;
   updateGoal(id: string, input: Partial<GoalInput>): Promise<{ goal: GoalRow }>;
   deleteGoal(id: string): Promise<{ ok: true }>;
-  sync(): Promise<{ ok: true; syncedAt: string }>;
+  sync(): Promise<SyncResult>;
 }
 
 export class ApiError extends Error {

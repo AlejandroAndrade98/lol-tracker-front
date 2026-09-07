@@ -1,7 +1,10 @@
 import type { QueryParams } from "@/types/api";
 import { ApiError } from "@/lib/api-types";
+import { recordSuccessfulApiFetch } from "@/lib/api-activity";
 
 const DEFAULT_TIMEOUT_MS = 12_000;
+
+export type ApiRequestOptions = { timeoutMs?: number };
 
 export const API_BASE_URL = normalizeBaseUrl(
   (import.meta.env["VITE_API_BASE_URL"] as string | undefined) ?? "http://localhost:3000",
@@ -56,9 +59,13 @@ export async function apiRequest<T>(
   params?: QueryParams,
   init?: RequestInit,
   adapt?: (raw: unknown) => T,
+  options?: ApiRequestOptions,
 ): Promise<T> {
   const controller = new AbortController();
-  const timeout = globalThis.setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+  const timeout = globalThis.setTimeout(
+    () => controller.abort(),
+    options?.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+  );
 
   try {
     const response = await fetch(`${API_BASE_URL}${path}${qs(params)}`, {
@@ -81,7 +88,9 @@ export async function apiRequest<T>(
       );
     }
 
-    return adapt ? adapt(body) : (body as T);
+    const result = adapt ? adapt(body) : (body as T);
+    recordSuccessfulApiFetch();
+    return result;
   } catch (error) {
     if (error instanceof ApiError) throw error;
     if (error instanceof DOMException && error.name === "AbortError") {

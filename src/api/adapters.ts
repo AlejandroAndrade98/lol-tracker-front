@@ -9,6 +9,7 @@ import type {
   PhasePerformanceResponse,
   RolesResponse,
   SessionsResponse,
+  SyncResult,
   ProgressResponse,
   RankedSnapshotRow,
   RankHistoryResponse,
@@ -395,5 +396,18 @@ export function adaptSessionsResponse(raw: unknown): SessionsResponse {
         avgCsPerMinute: requiredNumber(session, "/api/sessions", "avgCsPerMinute"),
       };
     }),
+  };
+}
+
+export function adaptSyncResult(raw: unknown): SyncResult {
+  const dto = record(raw, "/api/sync");
+  const fetchedMatchIds = Array.isArray(dto["fetchedMatchIds"])
+    ? dto["fetchedMatchIds"].filter((value): value is string => typeof value === "string")
+    : [];
+  return {
+    newMatchesInserted: optionalNumber(dto, "newMatchesInserted"),
+    timelinesInserted: optionalNumber(dto, "timelinesInserted"),
+    fetchedMatchIds,
+    syncedAt: optionalString(dto, "syncedAt", "updatedAt", "updated_at"),
   };
 }

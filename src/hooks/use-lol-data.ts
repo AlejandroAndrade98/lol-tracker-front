@@ -105,10 +105,15 @@ export function useGoalMutations() {
   return { create, update, remove };
 }
 
+export async function refreshActiveApiQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  await queryClient.invalidateQueries();
+  await queryClient.refetchQueries({ type: "active" });
+}
+
 export function useSync() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => api.sync(),
-    onSuccess: () => qc.invalidateQueries(),
+    onSuccess: () => refreshActiveApiQueries(qc),
   });
 }

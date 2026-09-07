@@ -1,4 +1,5 @@
+import { adaptSyncResult } from "./adapters";
 import { apiRequest } from "./client";
 
 export const syncBackend = () =>
-  apiRequest<{ ok: true; syncedAt: string }>("/api/sync", undefined, { method: "POST" });
+  apiRequest("/api/sync", undefined, { method: "POST" }, adaptSyncResult, { timeoutMs: 90_000 });
