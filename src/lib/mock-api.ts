@@ -1,0 +1,399 @@
+import type { LolTrackerApi, WindowParams } from "./api-types";
+import {
+  buildInsights,
+  buildSessions,
+  championStats,
+  mockGoals,
+  mockMatches,
+  mockPlayer,
+  mockRank,
+  mockRankHistory,
+  summarize,
+  type MockMatch,
+} from "@/mocks/data";
+import type {
+  ChampionDetailResponse,
+  DeathAnalyticsResponse,
+  FarmAnalyticsResponse,
+  FarmRoleAnalytics,
+  GoalInput,
+  GoalProgress,
+  GoalRow,
+  PhasePerformanceResponse,
+  Role,
+  RolesResponse,
+  TimeWindowSummary,
+} from "@/types/api";
+
+const LATENCY = 220;
+
+function delay<T>(value: T): Promise<T> {
+  return new Promise((resolve) => setTimeout(() => resolve(value), LATENCY));
+}
+
+function round(n: number, d = 2) {
+  const f = 10 ** d;
+  return Math.round(n * f) / f;
+}
+
+function avgOrNull(values: Array<number | null | undefined>): number | null {
+  const nums = values.filter((v): v is number => typeof v === "number");
+  if (!nums.length) return null;
+  return round(nums.reduce((a, b) => a + b, 0) / nums.length);
+}
+
+function filterMatches(p?: WindowParams): MockMatch[] {
+  let list = mockMatches;
+  if (p?.role) list = list.filter((m) => m.role === p.role);
+  else if (p?.includeSupport === false) list = list.filter((m) => m.role !== "UTILITY");
+  return list.slice(0, p?.games ?? 20);
+}
+
+function winRateOrNull(ms: MockMatch[]): number | null {
+  if (!ms.length) return null;
+  return round((ms.filter((m) => m.win).length / ms.length) * 100, 1);
+}
+
+function delta(current: number, previous: number) {
+  return round(current - previous);
+}
+
+function emptySummary(): TimeWindowSummary {
+  return {
+    games: 0,
+    wins: 0,
+    losses: 0,
+    winRate: 0,
+    avgKills: 0,
+    avgDeaths: 0,
+    avgAssists: 0,
+    kda: 0,
+    avgCsPerMinute: 0,
+    avgDamagePerMinute: 0,
+    avgGoldPerMinute: 0,
+    avgKillParticipation: null,
+    avgVisionScorePerMinute: null,
+  };
+}
+
+function stdDev(values: number[]): number {
+  if (values.length < 2) return 0;
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  return round(Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length));
+}
+
+function rolesBreakdown(matches: MockMatch[]): RolesResponse {
+  const allRoles: Record<string, TimeWindowSummary> = {};
+  for (const m of matches) {
+    if (!allRoles[m.role]) {
+      allRoles[m.role] = summarize(matches.filter((x) => x.role === m.role));
+    }
+  }
+  const primaryRole =
+    Object.entries(allRoles).sort((a, b) => b[1].games - a[1].games)[0]?.[0] ?? null;
+  return { allRoles, primaryRole };
+}
+
+let goals: GoalRow[] = [...mockGoals];
+
+function goalProgress(goal: GoalRow): GoalProgress {
+  let ms = mockMatches;
+  if (goal.role) ms = ms.filter((m) => m.role === goal.role);
+  if (goal.champion) ms = ms.filter((m) => m.champion_name === goal.champion);
+  ms = ms.slice(0, goal.periodGames);
+  const s = summarize(ms);
+
+  let currentValue: number | null = null;
+  if (!ms.length) currentValue = null;
+  else if (goal.metric === "avgDeaths") currentValue = s.avgDeaths;
+  else if (goal.metric === "winRate") currentValue = s.winRate;
+  else if (goal.metric === "kda") currentValue = s.kda;
+  else if (goal.metric === "avgKillParticipation") currentValue = s.avgKillParticipation;
+  else if (goal.metric === "championPool")
+    currentValue = new Set(ms.map((m) => m.champion_name)).size;
+  else currentValue = s.avgCsPerMinute;
+
+  const achieved =
+    currentValue === null
+      ? false
+      : goal.comparison === "lte"
+        ? currentValue <= goal.target
+        : goal.comparison === "lt"
+          ? currentValue < goal.target
+          : goal.comparison === "gte"
+            ? currentValue >= goal.target
+            : goal.comparison === "gt"
+              ? currentValue > goal.target
+              : currentValue === goal.target;
+
+  const progressPercent =
+    currentValue === null
+      ? 0
+      : goal.comparison === "lte" || goal.comparison === "lt"
+        ? Math.max(0, Math.min(100, round((goal.target / Math.max(currentValue, 0.01)) * 100, 0)))
+        : Math.max(0, Math.min(100, round((currentValue / Math.max(goal.target, 0.01)) * 100, 0)));
+
+  return { goal, currentValue, games: ms.length, achieved, progressPercent };
+}
+
+function buildPhasePerformance(matches: MockMatch[]): PhasePerformanceResponse {
+  const timelineMatches = matches.filter((m) => m.timeline);
+  const avgCsDiff10 = avgOrNull(timelineMatches.map((m) => m.timeline?.cs_diff_at_10 ?? null));
+  const avgCsDiff15 = avgOrNull(timelineMatches.map((m) => m.timeline?.cs_diff_at_15 ?? null));
+  const avgGoldDiff10 = avgOrNull(timelineMatches.map((m) => m.timeline?.gold_diff_at_10 ?? null));
+  const avgGoldDiff15 = avgOrNull(timelineMatches.map((m) => m.timeline?.gold_diff_at_15 ?? null));
+  const avgXpDiff10 = avgOrNull(timelineMatches.map((m) => m.timeline?.xp_diff_at_10 ?? null));
+  const avgXpDiff15 = avgOrNull(timelineMatches.map((m) => m.timeline?.xp_diff_at_15 ?? null));
+  const deathsBefore10 = avgOrNull(
+    timelineMatches.map((m) => m.timeline?.deaths_before_10 ?? null),
+  );
+  const deathsBefore15 = avgOrNull(
+    timelineMatches.map((m) => m.timeline?.deaths_before_15 ?? null),
+  );
+  const midDeaths = avgOrNull(timelineMatches.map((m) => m.timeline?.deaths_15_to_25 ?? null));
+  const lateDeaths = avgOrNull(timelineMatches.map((m) => m.timeline?.deaths_after_25 ?? null));
+  const summary = summarize(matches);
+  const enough = timelineMatches.length >= 10;
+
+  return {
+    phases: {
+      laning: {
+        status: !enough
+          ? "insufficient_data"
+          : (avgCsDiff10 ?? 0) >= 5 && (deathsBefore10 ?? 9) <= 0.7
+            ? "strong"
+            : (avgCsDiff10 ?? 0) < -5 || (deathsBefore10 ?? 0) > 1.1
+              ? "needs_attention"
+              : "neutral",
+        games: timelineMatches.length,
+        metrics: [
+          { key: "csDiff10", label: "CS diff @10", value: avgCsDiff10, unit: "cs" },
+          { key: "csDiff15", label: "CS diff @15", value: avgCsDiff15, unit: "cs" },
+          { key: "goldDiff10", label: "Gold diff @10", value: avgGoldDiff10, unit: "g" },
+          { key: "goldDiff15", label: "Gold diff @15", value: avgGoldDiff15, unit: "g" },
+          { key: "xpDiff10", label: "XP diff @10", value: avgXpDiff10, unit: "xp" },
+          { key: "xpDiff15", label: "XP diff @15", value: avgXpDiff15, unit: "xp" },
+          { key: "deathsBefore10", label: "Deaths before 10", value: deathsBefore10 },
+          { key: "deathsBefore15", label: "Deaths before 15", value: deathsBefore15 },
+        ],
+      },
+      midGame: {
+        status: !enough
+          ? "insufficient_data"
+          : (midDeaths ?? 9) <= 1.4
+            ? "strong"
+            : (midDeaths ?? 0) >= 2
+              ? "needs_attention"
+              : "neutral",
+        games: timelineMatches.length,
+        metrics: [
+          { key: "deaths15To25", label: "Deaths 15-25", value: midDeaths },
+          {
+            key: "kp",
+            label: "Kill participation",
+            value: summary.avgKillParticipation,
+            unit: "%",
+          },
+          { key: "damage", label: "Damage/min", value: summary.avgDamagePerMinute },
+        ],
+      },
+      lateGame: {
+        status: !enough
+          ? "insufficient_data"
+          : (lateDeaths ?? 9) <= 0.9
+            ? "strong"
+            : (lateDeaths ?? 0) >= 1.5
+              ? "needs_attention"
+              : "neutral",
+        games: timelineMatches.length,
+        metrics: [
+          { key: "lateDeaths", label: "Deaths after 25", value: lateDeaths },
+          {
+            key: "kp",
+            label: "Kill participation",
+            value: summary.avgKillParticipation,
+            unit: "%",
+          },
+          { key: "damage", label: "Damage/min", value: summary.avgDamagePerMinute },
+        ],
+      },
+    },
+  };
+}
+
+export const mockApi: LolTrackerApi = {
+  getHealth: () =>
+    delay({ ok: true as const, status: "mock", timestamp: new Date().toISOString() }),
+  getPlayer: () => delay({ player: mockPlayer }),
+  getRank: () => delay({ rank: mockRank ?? null }),
+
+  getRankHistory: (p) => {
+    const history = p?.all
+      ? mockRankHistory
+      : mockRankHistory.filter(
+          (r) => new Date(r.captured_at).getTime() >= Date.now() - (p?.days ?? 90) * 86400000,
+        );
+    return delay({ player: mockPlayer, history });
+  },
+
+  getProgress: (p) => {
+    const size = p?.games ?? 20;
+    const pool = p?.role ? mockMatches.filter((m) => m.role === p.role) : mockMatches;
+    const current = pool.slice(0, size);
+    const previous = pool.slice(size, size * 2);
+    const recentForm = summarize(current);
+    const previousForm = previous.length ? summarize(previous) : null;
+    const base = previousForm ?? emptySummary();
+
+    return delay({
+      player: mockPlayer,
+      rank: mockRank ?? null,
+      recentForm,
+      previousForm,
+      roles: rolesBreakdown(current),
+      trends: {
+        winRateDelta: delta(recentForm.winRate, base.winRate),
+        killsDelta: delta(recentForm.avgKills, base.avgKills),
+        deathsDelta: delta(recentForm.avgDeaths, base.avgDeaths),
+        assistsDelta: delta(recentForm.avgAssists, base.avgAssists),
+        kdaDelta: delta(recentForm.kda, base.kda),
+        csPerMinuteDelta: delta(recentForm.avgCsPerMinute, base.avgCsPerMinute),
+        damagePerMinuteDelta: delta(recentForm.avgDamagePerMinute, base.avgDamagePerMinute),
+        goldPerMinuteDelta: delta(recentForm.avgGoldPerMinute, base.avgGoldPerMinute),
+      },
+      consistency: {
+        deathStdDev: stdDev(current.map((m) => m.deaths)),
+        csPerMinuteStdDev: stdDev(current.map((m) => m.cs_per_minute)),
+        kdaStdDev: stdDev(current.map((m) => (m.kills + m.assists) / Math.max(1, m.deaths))),
+        score: Math.max(0, Math.min(100, round(100 - stdDev(current.map((m) => m.deaths)) * 9, 0))),
+      },
+      bestChampions: championStats(current)
+        .filter((c) => c.games >= 3)
+        .sort((a, b) => b.winRate - a.winRate)
+        .slice(0, 5),
+      weaknesses: buildInsights(current).filter((i) => i.type === "warning"),
+      strengths: buildInsights(current).filter((i) => i.type === "positive"),
+    });
+  },
+
+  getRoles: (p) => delay(rolesBreakdown(filterMatches({ ...p, role: null }))),
+
+  getMatches: (p) => {
+    let list = mockMatches;
+    if (p?.role) list = list.filter((m) => m.role === p.role);
+    return delay({ matches: list.slice(0, p?.limit ?? 20) });
+  },
+
+  getMatch: (matchId) => {
+    const match =
+      mockMatches.find((m) => m.id === matchId || m.riot_match_id === matchId) ?? mockMatches[0]!;
+    return delay({
+      summary: match,
+      playerStats: match,
+      opponentStats: {
+        championId: null,
+        championName: match.opponent,
+        kills: Math.max(0, match.deaths - 1),
+        deaths: match.kills,
+        assists: Math.max(1, match.assists - 2),
+        cs: match.timeline?.cs_at_15 ? Math.round(match.cs * 0.95) : null,
+        csPerMinute: Math.max(0, match.cs_per_minute - 0.3),
+        gold: Math.round(match.gold * 0.97),
+        damage: Math.round(match.damage * 0.92),
+      },
+      timelineMetrics: match.timeline,
+    });
+  },
+
+  getChampions: (p) => delay({ champions: championStats(filterMatches(p)) }),
+
+  getChampion: (championName, p) => {
+    const stats = championStats(filterMatches(p));
+    const champion =
+      stats.find((c) => c.championName.toLowerCase() === championName.toLowerCase()) ?? stats[0]!;
+    const recentMatches = mockMatches
+      .filter((m) => m.champion_name === champion.championName)
+      .slice(0, 12);
+    const response: ChampionDetailResponse = { champion, recentMatches };
+    return delay(response);
+  },
+
+  getPhases: (p) => delay(buildPhasePerformance(filterMatches(p))),
+
+  getDeaths: (p) => {
+    const ms = filterMatches(p);
+    const lte5 = ms.filter((m) => m.deaths <= 5);
+    const six = ms.filter((m) => m.deaths >= 6 && m.deaths <= 8);
+    const gte9 = ms.filter((m) => m.deaths >= 9);
+    const res: DeathAnalyticsResponse = {
+      avgDeaths: summarize(ms).avgDeaths,
+      avgDeathsBefore10: avgOrNull(ms.map((m) => m.timeline?.deaths_before_10 ?? null)),
+      avgDeathsBefore15: avgOrNull(ms.map((m) => m.timeline?.deaths_before_15 ?? null)),
+      avgDeaths15To25: avgOrNull(ms.map((m) => m.timeline?.deaths_15_to_25 ?? null)),
+      avgDeathsAfter25: avgOrNull(ms.map((m) => m.timeline?.deaths_after_25 ?? null)),
+      firstDeathAvgMinute: avgOrNull(ms.map((m) => m.timeline?.first_death_minute ?? null)),
+      winRateWhenDeathsLTE5: winRateOrNull(lte5),
+      winRateWhenDeaths6To8: winRateOrNull(six),
+      winRateWhenDeathsGTE9: winRateOrNull(gte9),
+      gamesByDeathBucket: { lte5: lte5.length, sixToEight: six.length, gte9: gte9.length },
+    };
+    return delay(res);
+  },
+
+  getFarm: (p) => {
+    const size = p?.games ?? 40;
+    const byRole: Record<string, FarmRoleAnalytics> = {};
+    const roles: Role[] = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
+    for (const role of roles) {
+      const ms = mockMatches.filter((m) => m.role === role).slice(0, size);
+      if (!ms.length) continue;
+      byRole[role] = {
+        games: ms.length,
+        avgCsPerMinute: summarize(ms).avgCsPerMinute,
+        avgCsAt10: avgOrNull(ms.map((m) => m.timeline?.cs_at_10 ?? null)),
+        avgCsAt15: avgOrNull(ms.map((m) => m.timeline?.cs_at_15 ?? null)),
+        avgCsDiffAt10: avgOrNull(ms.map((m) => m.timeline?.cs_diff_at_10 ?? null)),
+        avgCsDiffAt15: avgOrNull(ms.map((m) => m.timeline?.cs_diff_at_15 ?? null)),
+        winRateWhenCsPerMinuteGTE8: winRateOrNull(ms.filter((m) => m.cs_per_minute >= 8)),
+        winRateWhenCsPerMinute7To8: winRateOrNull(
+          ms.filter((m) => m.cs_per_minute >= 7 && m.cs_per_minute < 8),
+        ),
+        winRateWhenCsPerMinuteLT7: winRateOrNull(ms.filter((m) => m.cs_per_minute < 7)),
+      };
+    }
+    return delay({ byRole });
+  },
+
+  getSessions: (p) => {
+    const cutoff = Date.now() - (p?.days ?? 30) * 86400000;
+    const ms = mockMatches.filter((m) => new Date(m.played_at).getTime() >= cutoff);
+    return delay({ sessions: buildSessions(ms) });
+  },
+
+  getInsights: (p) => delay({ insights: buildInsights(filterMatches(p)) }),
+  getGoals: () => delay({ goals }),
+  getGoalsProgress: () => delay({ goals: goals.map(goalProgress) }),
+
+  createGoal: (input: GoalInput) => {
+    const goal: GoalRow = {
+      id: `goal-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      ...input,
+    };
+    goals = [goal, ...goals];
+    return delay({ goal });
+  },
+
+  updateGoal: (id, input) => {
+    goals = goals.map((g) => (g.id === id ? { ...g, ...input } : g));
+    const goal = goals.find((g) => g.id === id)!;
+    return delay({ goal });
+  },
+
+  deleteGoal: (id) => {
+    goals = goals.filter((g) => g.id !== id);
+    return delay({ ok: true as const });
+  },
+
+  sync: () => delay({ ok: true as const, syncedAt: new Date().toISOString() }),
+};
