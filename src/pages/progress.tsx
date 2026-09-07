@@ -115,35 +115,42 @@ export function ProgressPage() {
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               <CompareItem
                 label="Win rate"
-                current={progress.data.recentForm.winRate}
-                previous={progress.data.previousForm?.winRate}
+                current={progress.data.comparison.current.winRate}
+                previous={progress.data.comparison.previous?.winRate}
+                delta={progress.data.comparison.delta?.winRate}
                 suffix="%"
+                deltaSuffix="pp"
               />
               <CompareItem
                 label="KDA"
-                current={progress.data.recentForm.kda}
-                previous={progress.data.previousForm?.kda}
+                current={progress.data.comparison.current.kda}
+                previous={progress.data.comparison.previous?.kda}
+                delta={progress.data.comparison.delta?.kda}
               />
               <CompareItem
                 label="Deaths"
-                current={progress.data.recentForm.avgDeaths}
-                previous={progress.data.previousForm?.avgDeaths}
+                current={progress.data.comparison.current.avgDeaths}
+                previous={progress.data.comparison.previous?.avgDeaths}
+                delta={progress.data.comparison.delta?.avgDeaths}
                 lowerIsBetter
               />
               <CompareItem
                 label="CS/min"
-                current={progress.data.recentForm.avgCsPerMinute}
-                previous={progress.data.previousForm?.avgCsPerMinute}
+                current={progress.data.comparison.current.avgCsPerMinute}
+                previous={progress.data.comparison.previous?.avgCsPerMinute}
+                delta={progress.data.comparison.delta?.avgCsPerMinute}
               />
               <CompareItem
                 label="Damage/min"
-                current={progress.data.recentForm.avgDamagePerMinute}
-                previous={progress.data.previousForm?.avgDamagePerMinute}
+                current={progress.data.comparison.current.avgDamagePerMinute}
+                previous={progress.data.comparison.previous?.avgDamagePerMinute}
+                delta={progress.data.comparison.delta?.avgDamagePerMinute}
               />
               <CompareItem
                 label="Gold/min"
-                current={progress.data.recentForm.avgGoldPerMinute}
-                previous={progress.data.previousForm?.avgGoldPerMinute}
+                current={progress.data.comparison.current.avgGoldPerMinute}
+                previous={progress.data.comparison.previous?.avgGoldPerMinute}
+                delta={progress.data.comparison.delta?.avgGoldPerMinute}
               />
             </div>
           ) : null}

@@ -213,10 +213,10 @@ export function TrendIndicator({
   lowerIsBetter?: boolean;
 }) {
   if (delta === null || delta === undefined)
-    return <span className="text-xs text-muted-foreground">No comparison</span>;
+    return <span className="text-xs text-muted-foreground">No comparison yet</span>;
   const flat = Math.abs(delta) < 0.005;
   const good = lowerIsBetter ? delta < 0 : delta > 0;
-  const Icon = flat ? ArrowRight : good ? ArrowUpRight : ArrowDownRight;
+  const Icon = flat ? ArrowRight : delta > 0 ? ArrowUpRight : ArrowDownRight;
   return (
     <span
       className={cn(
@@ -236,6 +236,7 @@ export function MetricCard({
   delta,
   previous,
   suffix = "",
+  deltaSuffix = suffix,
   digits = 1,
   lowerIsBetter = false,
 }: {
@@ -244,26 +245,48 @@ export function MetricCard({
   delta?: number | null | undefined;
   previous?: number | null | undefined;
   suffix?: string;
+  deltaSuffix?: string;
   digits?: number;
   lowerIsBetter?: boolean;
 }) {
+  const hasComparison =
+    previous !== null && previous !== undefined && delta !== null && delta !== undefined;
+  const good = delta !== null && delta !== undefined && (lowerIsBetter ? delta < 0 : delta > 0);
+  const status =
+    !hasComparison || Math.abs(delta ?? 0) < 0.005 ? null : good ? "Improving" : "Needs attention";
+
   return (
-    <Surface className="min-h-[126px]">
+    <Surface className="min-h-[140px]">
       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
       <div className="mt-3 flex items-end justify-between gap-2">
-        <span className="text-3xl font-semibold tabular-nums">{nf(value, digits, suffix)}</span>
+        <div>
+          <p className="text-xs text-muted-foreground">Current</p>
+          <span className="mt-1 block text-3xl font-semibold tabular-nums">
+            {nf(value, digits, suffix)}
+          </span>
+        </div>
         <TrendIndicator
           delta={delta}
-          suffix={suffix}
+          suffix={deltaSuffix}
           digits={digits}
           lowerIsBetter={lowerIsBetter}
         />
       </div>
-      <p className="mt-3 text-xs text-muted-foreground">Previous: {nf(previous, digits, suffix)}</p>
+      {previous === null || previous === undefined ? (
+        <p className="mt-3 text-xs text-muted-foreground">No comparison yet</p>
+      ) : (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Previous {nf(previous, digits, suffix)}
+        </p>
+      )}
+      {status ? (
+        <p className={good ? "mt-1 text-xs text-positive" : "mt-1 text-xs text-negative"}>
+          {status}
+        </p>
+      ) : null}
     </Surface>
   );
 }
-
 export function StatusBadge({
   status,
 }: {
@@ -792,33 +815,50 @@ export function CompareItem({
   label,
   current,
   previous,
+  delta,
   suffix = "",
+  deltaSuffix = suffix,
+  digits = 1,
   lowerIsBetter = false,
 }: {
   label: string;
   current: number | null | undefined;
   previous: number | null | undefined;
+  delta: number | null | undefined;
   suffix?: string;
+  deltaSuffix?: string;
+  digits?: number;
   lowerIsBetter?: boolean;
 }) {
-  const delta =
-    current !== null && current !== undefined && previous !== null && previous !== undefined
-      ? current - previous
-      : null;
+  const hasComparison =
+    previous !== null && previous !== undefined && delta !== null && delta !== undefined;
   return (
     <div className="rounded-md border border-border bg-surface p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-medium">{label}</p>
-        <TrendIndicator delta={delta} suffix={suffix} lowerIsBetter={lowerIsBetter} />
+        {hasComparison ? (
+          <TrendIndicator
+            delta={delta}
+            suffix={deltaSuffix}
+            digits={digits}
+            lowerIsBetter={lowerIsBetter}
+          />
+        ) : (
+          <span className="text-xs text-muted-foreground">No comparison yet</span>
+        )}
       </div>
       <div className="mt-3 flex items-baseline gap-2">
-        <span className="text-2xl font-semibold tabular-nums">{nf(current, 1, suffix)}</span>
-        <span className="text-xs text-muted-foreground">vs {nf(previous, 1, suffix)}</span>
+        <span className="text-xs text-muted-foreground">Current</span>
+        <span className="text-2xl font-semibold tabular-nums">{nf(current, digits, suffix)}</span>
       </div>
+      {previous !== null && previous !== undefined ? (
+        <p className="mt-1 text-xs text-muted-foreground">
+          Previous {nf(previous, digits, suffix)}
+        </p>
+      ) : null}
     </div>
   );
 }
-
 export function CoachMark({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-md border border-accent/25 bg-accent/8 p-4 text-sm text-muted-foreground">

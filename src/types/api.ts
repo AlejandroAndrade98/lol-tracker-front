@@ -228,11 +228,28 @@ export type ChampionAnalyticsResponse = {
   champions: ChampionStats[];
 };
 
+export type WindowComparisonDelta = {
+  winRate: number;
+  avgKills: number;
+  avgDeaths: number;
+  avgAssists: number;
+  kda: number;
+  avgCsPerMinute: number;
+  avgDamagePerMinute: number;
+  avgGoldPerMinute: number;
+};
+
+export type WindowComparison = {
+  current: TimeWindowSummary;
+  previous: TimeWindowSummary | null;
+  delta: WindowComparisonDelta | null;
+};
+
 export type ProgressResponse = {
   player: PlayerRow;
   rank: RankedSnapshotRow | null;
   recentForm: TimeWindowSummary;
-  previousForm?: TimeWindowSummary | null;
+  comparison: WindowComparison;
   roles: RolesResponse;
   trends: {
     winRateDelta: number;
@@ -373,6 +390,7 @@ export type CoachResponse = {
   strength: CoachFocus | null;
   goals: CoachGoalProgress[];
   recentForm: TimeWindowSummary;
+  comparison: WindowComparison;
   recommendedChampionFocus: {
     championName: string;
     games: number;

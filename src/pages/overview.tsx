@@ -63,30 +63,30 @@ export function OverviewPage() {
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               <MetricCard
                 label="Recent win rate"
-                value={progress.data.recentForm.winRate}
-                previous={progress.data.previousForm?.winRate}
-                delta={progress.data.trends.winRateDelta}
+                value={progress.data.comparison.current.winRate}
+                previous={progress.data.comparison.previous?.winRate}
+                delta={progress.data.comparison.delta?.winRate}
                 suffix="%"
               />
               <MetricCard
                 label="KDA"
-                value={progress.data.recentForm.kda}
-                previous={progress.data.previousForm?.kda}
-                delta={progress.data.trends.kdaDelta}
+                value={progress.data.comparison.current.kda}
+                previous={progress.data.comparison.previous?.kda}
+                delta={progress.data.comparison.delta?.kda}
                 digits={2}
               />
               <MetricCard
                 label="Deaths/game"
-                value={progress.data.recentForm.avgDeaths}
-                previous={progress.data.previousForm?.avgDeaths}
-                delta={progress.data.trends.deathsDelta}
+                value={progress.data.comparison.current.avgDeaths}
+                previous={progress.data.comparison.previous?.avgDeaths}
+                delta={progress.data.comparison.delta?.avgDeaths}
                 lowerIsBetter
               />
               <MetricCard
                 label="CS/min"
-                value={progress.data.recentForm.avgCsPerMinute}
-                previous={progress.data.previousForm?.avgCsPerMinute}
-                delta={progress.data.trends.csPerMinuteDelta}
+                value={progress.data.comparison.current.avgCsPerMinute}
+                previous={progress.data.comparison.previous?.avgCsPerMinute}
+                delta={progress.data.comparison.delta?.avgCsPerMinute}
                 digits={2}
               />
               <MetricCard
@@ -120,21 +120,28 @@ export function OverviewPage() {
               >
                 <div className="grid gap-3">
                   <CompareItem
-                    label="Win rate"
-                    current={progress.data.recentForm.winRate}
-                    previous={progress.data.previousForm?.winRate}
-                    suffix="%"
-                  />
-                  <CompareItem
                     label="Deaths"
-                    current={progress.data.recentForm.avgDeaths}
-                    previous={progress.data.previousForm?.avgDeaths}
+                    current={progress.data.comparison.current.avgDeaths}
+                    previous={progress.data.comparison.previous?.avgDeaths}
+                    delta={progress.data.comparison.delta?.avgDeaths}
+                    digits={2}
                     lowerIsBetter
                   />
                   <CompareItem
-                    label="CS/min"
-                    current={progress.data.recentForm.avgCsPerMinute}
-                    previous={progress.data.previousForm?.avgCsPerMinute}
+                    label="KDA"
+                    current={progress.data.comparison.current.kda}
+                    previous={progress.data.comparison.previous?.kda}
+                    delta={progress.data.comparison.delta?.kda}
+                    digits={2}
+                  />
+                  <CompareItem
+                    label="Win rate"
+                    current={progress.data.comparison.current.winRate}
+                    previous={progress.data.comparison.previous?.winRate}
+                    delta={progress.data.comparison.delta?.winRate}
+                    suffix="%"
+                    deltaSuffix="pp"
+                    digits={0}
                   />
                 </div>
               </Surface>
@@ -145,11 +152,11 @@ export function OverviewPage() {
                 title="Recent Form"
                 description="Last 20 games summarized without hiding the sample size."
               >
-                <SummaryFacts summary={progress.data.recentForm} />
+                <SummaryFacts summary={progress.data.comparison.current} />
                 <CoachMark>
                   Deaths and farm are the fastest signals to review before queueing again. Current
-                  deaths/game is {nf(progress.data.recentForm.avgDeaths, 1)} and CS/min is{" "}
-                  {nf(progress.data.recentForm.avgCsPerMinute, 2)}.
+                  deaths/game is {nf(progress.data.comparison.current.avgDeaths, 1)} and CS/min is{" "}
+                  {nf(progress.data.comparison.current.avgCsPerMinute, 2)}.
                 </CoachMark>
               </Surface>
 

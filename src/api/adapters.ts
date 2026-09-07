@@ -21,6 +21,7 @@ import type {
   RankResponse,
   Role,
   TimeWindowSummary,
+  WindowComparison,
 } from "@/types/api";
 
 export type RawBackendDTO = Record<string, unknown>;
@@ -133,6 +134,31 @@ function adaptSummary(value: unknown, endpoint: string): TimeWindowSummary {
     avgGoldPerMinute: requiredNumber(dto, endpoint, "avgGoldPerMinute"),
     avgKillParticipation: optionalNumber(dto, "avgKillParticipation"),
     avgVisionScorePerMinute: optionalNumber(dto, "avgVisionScorePerMinute"),
+  };
+}
+
+function adaptComparison(value: unknown, endpoint: string): WindowComparison {
+  const dto = record(value, endpoint, "comparison");
+  const previous = dto["previous"];
+  const delta = dto["delta"];
+  const adaptDelta = (entry: unknown) => {
+    if (entry === null || entry === undefined) return null;
+    const item = record(entry, endpoint, "comparison.delta");
+    return {
+      winRate: requiredNumber(item, endpoint, "winRate"),
+      avgKills: requiredNumber(item, endpoint, "avgKills"),
+      avgDeaths: requiredNumber(item, endpoint, "avgDeaths"),
+      avgAssists: requiredNumber(item, endpoint, "avgAssists"),
+      kda: requiredNumber(item, endpoint, "kda"),
+      avgCsPerMinute: requiredNumber(item, endpoint, "avgCsPerMinute"),
+      avgDamagePerMinute: requiredNumber(item, endpoint, "avgDamagePerMinute"),
+      avgGoldPerMinute: requiredNumber(item, endpoint, "avgGoldPerMinute"),
+    };
+  };
+  return {
+    current: adaptSummary(dto["current"], endpoint),
+    previous: previous === null || previous === undefined ? null : adaptSummary(previous, endpoint),
+    delta: adaptDelta(delta),
   };
 }
 
@@ -268,6 +294,7 @@ export function adaptProgressResponse(raw: unknown): ProgressResponse {
     dto["rank"] === null
       ? null
       : adaptRank(record(dto["rank"], "/api/progress", "rank"), "/api/progress");
+  const comparison = adaptComparison(dto["comparison"], "/api/progress");
   const insights = (value: unknown, name: string) =>
     Array.isArray(value)
       ? value.map((item, index) => adaptInsight(item, "/api/progress", index))
@@ -275,8 +302,8 @@ export function adaptProgressResponse(raw: unknown): ProgressResponse {
   return {
     player: adaptPlayer(record(dto["player"], "/api/progress", "player"), "/api/progress"),
     rank,
-    recentForm: adaptSummary(dto["recentForm"], "/api/progress"),
-    previousForm: dto["previousForm"] ? adaptSummary(dto["previousForm"], "/api/progress") : null,
+    recentForm: comparison.current,
+    comparison,
     roles: {
       allRoles: Object.fromEntries(
         Object.entries(allRoles).map(([key, value]) => [key, adaptSummary(value, "/api/progress")]),
@@ -492,6 +519,7 @@ export function adaptCoachResponse(raw: unknown): CoachResponse {
       },
     };
   };
+  const comparison = adaptComparison(dto["comparison"], endpoint);
   const champion = dto["recommendedChampionFocus"];
   const championFocus =
     champion === null || champion === undefined
@@ -508,7 +536,8 @@ export function adaptCoachResponse(raw: unknown): CoachResponse {
     secondaryFocus: focus(dto["secondaryFocus"], "secondaryFocus"),
     strength: focus(dto["strength"], "strength"),
     goals: Array.isArray(dto["goals"]) ? dto["goals"].map(goal) : [],
-    recentForm: adaptSummary(dto["recentForm"], endpoint),
+    recentForm: comparison.current,
+    comparison,
     recommendedChampionFocus: championFocus
       ? {
           championName: requiredString(championFocus, endpoint, "championName"),

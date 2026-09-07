@@ -147,7 +147,7 @@ export function FocusPage() {
 
       {starting && coach.data ? (
         <FocusStarter
-          recentForm={coach.data.recentForm}
+          recentForm={coach.data.comparison.current}
           excludeMetric={primary?.metric ?? null}
           saving={mutations.create.isPending}
           onClose={() => setStarting(false)}

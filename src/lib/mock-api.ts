@@ -60,6 +60,25 @@ function delta(current: number, previous: number) {
   return round(current - previous);
 }
 
+function comparisonFromWindows(current: TimeWindowSummary, previous: TimeWindowSummary | null) {
+  return {
+    current,
+    previous,
+    delta: previous
+      ? {
+          winRate: delta(current.winRate, previous.winRate),
+          avgKills: delta(current.avgKills, previous.avgKills),
+          avgDeaths: delta(current.avgDeaths, previous.avgDeaths),
+          avgAssists: delta(current.avgAssists, previous.avgAssists),
+          kda: delta(current.kda, previous.kda),
+          avgCsPerMinute: delta(current.avgCsPerMinute, previous.avgCsPerMinute),
+          avgDamagePerMinute: delta(current.avgDamagePerMinute, previous.avgDamagePerMinute),
+          avgGoldPerMinute: delta(current.avgGoldPerMinute, previous.avgGoldPerMinute),
+        }
+      : null,
+  };
+}
+
 function emptySummary(): TimeWindowSummary {
   return {
     games: 0,
@@ -369,6 +388,12 @@ function mockCoach(params?: {
       : null,
     goals: activeGoals,
     recentForm: summarize(roleMatches.slice(0, params?.games ?? 20)),
+    comparison: comparisonFromWindows(
+      summarize(roleMatches.slice(0, params?.games ?? 20)),
+      roleMatches.length > (params?.games ?? 20)
+        ? summarize(roleMatches.slice(params?.games ?? 20, (params?.games ?? 20) * 2))
+        : null,
+    ),
     recommendedChampionFocus: champion
       ? {
           championName: champion.championName,
@@ -412,7 +437,7 @@ export const mockApi: LolTrackerApi = {
       player: mockPlayer,
       rank: mockRank ?? null,
       recentForm,
-      previousForm,
+      comparison: comparisonFromWindows(recentForm, previousForm),
       roles: rolesBreakdown(current),
       trends: {
         winRateDelta: delta(recentForm.winRate, base.winRate),
