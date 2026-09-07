@@ -30,13 +30,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const player = usePlayer();
   const rank = useRank();
-  const account = player.data?.player
-    ? `${player.data.player.gameName}#${player.data.player.tagLine}`
-    : "Jordan Belfort#LAN29";
-  const rankText = rank.data?.rank
-    ? tierLabel(rank.data.rank.tier, rank.data.rank.division, rank.data.rank.leaguePoints)
+  const playerModel = player.data?.player ?? null;
+  const rankModel = rank.data?.rank ?? null;
+  const account = playerModel ? `${playerModel.gameName}#${playerModel.tagLine}` : "No data";
+  const rankText = rankModel
+    ? tierLabel(rankModel.tier, rankModel.division, rankModel.leaguePoints)
     : "Rank unavailable";
-  const updatedAt = player.data?.player.lastSyncedAt ?? rank.data?.rank?.capturedAt ?? null;
+  const updatedAt = playerModel?.lastSyncedAt ?? rankModel?.capturedAt ?? null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
