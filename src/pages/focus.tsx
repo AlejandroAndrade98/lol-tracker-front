@@ -1,22 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, RefreshCw, Target } from "lucide-react";
 import { useState } from "react";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
 import { QueryBoundary } from "@/components/common/states";
-import { ChampionAvatar, SampleSizeBadge, roleLabel } from "@/components/lol-ui";
+import { roleLabel } from "@/components/lol-ui";
+import { GoalCard } from "@/components/focus/goal-card";
+import { GoalTrendChart } from "@/components/focus/goal-trend-chart";
+import { ChampionFocusCard } from "@/components/focus/champion-focus-card";
 import { Button } from "@/components/ui/button";
 import { useCoach, useGoalMutations, useMatches, useSync } from "@/hooks/use-lol-data";
-import { nf, pct, shortDate } from "@/lib/format";
+import { nf } from "@/lib/format";
 import type { CoachGoalProgress, GoalInput, GoalMetric } from "@/types/api";
 
 const COACH_PARAMS = { games: 20, role: "MIDDLE" as const, baselineGames: 100 };
@@ -37,10 +29,7 @@ export function FocusPage() {
     <div className="mx-auto max-w-6xl space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            Next queue priority
-          </p>
-          <h2 className="mt-1 text-2xl font-semibold md:text-3xl">Focus</h2>
+          <h2 className="text-2xl font-semibold">Focus</h2>
         </div>
         <div className="flex items-center gap-3">
           {sync.data?.syncedAt ? (
@@ -75,39 +64,38 @@ export function FocusPage() {
         {coach.data && !goals.length ? <EmptyFocus onStart={() => setStarting(true)} /> : null}
         {coach.data && primary ? (
           <>
-            <section className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(17rem,0.7fr)]">
-              <PrimaryGoal
-                goal={primary}
-                editing={sync.isPending}
-                onEdit={() => setEditing(primary.id)}
-              />
-              <div className="grid gap-4">
+            <section aria-labelledby="your-focus-heading">
+              <h2 id="your-focus-heading" className="mb-3 text-base font-semibold">
+                Your focus
+              </h2>
+              <div className="grid gap-4 md:grid-cols-2">
+                <GoalCard
+                  goal={primary}
+                  priority="Primary"
+                  updating={sync.isPending}
+                  onEdit={() => setEditing(primary.id)}
+                />
                 {secondary ? (
-                  <SecondaryGoal goal={secondary} onEdit={() => setEditing(secondary.id)} />
+                  <GoalCard
+                    goal={secondary}
+                    priority="Secondary"
+                    updating={sync.isPending}
+                    onEdit={() => setEditing(secondary.id)}
+                  />
                 ) : (
                   <AddSecondaryFocus onStart={() => setStarting(true)} />
                 )}
-                {coach.data.recommendedChampionFocus ? (
-                  <ChampionFocus champion={coach.data.recommendedChampionFocus} />
-                ) : null}
               </div>
             </section>
-            <section className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(17rem,0.8fr)]">
-              <NextGames goals={goals} />
-              <Milestone goal={primary} />
-            </section>
+            <GoalTrendChart goals={[primary, ...goals.filter((goal) => goal.id !== primary.id)]} />
+            <ChampionFocusCard champion={coach.data.recommendedChampionFocus} />
           </>
         ) : null}
       </QueryBoundary>
 
       <section className="border-t border-border pt-5">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Recent 5</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Only the signals that change the next game.
-            </p>
-          </div>
+          <h2 className="text-base font-semibold">Recent 5</h2>
           <Link to="/matches" className="text-sm font-medium text-accent hover:text-accent/80">
             Matches <ChevronRight className="inline h-4 w-4" />
           </Link>
@@ -363,279 +351,6 @@ function FocusStarter({
   );
 }
 
-function PrimaryGoal({
-  goal,
-  editing,
-  onEdit,
-}: {
-  goal: CoachGoalProgress;
-  editing: boolean;
-  onEdit: () => void;
-}) {
-  return (
-    <section className="border border-accent/35 bg-surface p-5 md:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.16em] text-accent">Primary focus</p>
-          <h3 className="mt-2 text-lg font-semibold">{goal.label}</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {scope(goal)} · {goal.sampleSize} games counted
-          </p>
-        </div>
-        <Button size="sm" variant="ghost" onClick={onEdit}>
-          Edit goal
-        </Button>
-      </div>
-      <div
-        className={
-          editing
-            ? "mt-7 flex items-end gap-3 opacity-60 transition-all duration-500"
-            : "mt-7 flex items-end gap-3 transition-all duration-500"
-        }
-      >
-        <span className="text-5xl font-semibold tabular-nums md:text-6xl">
-          {display(goal.current)}
-        </span>
-        <span className="pb-2 text-sm text-muted-foreground">{unitFor(goal.metric)}</span>
-      </div>
-      <div className="mt-6 grid grid-cols-3 gap-3 border-y border-border py-4 text-sm">
-        <Value label="Target" value={display(goal.target)} />
-        <Value label="Baseline" value={display(goal.baseline)} />
-        <Value
-          label="Need"
-          value={goal.distanceToTarget === null ? "—" : display(goal.distanceToTarget)}
-        />
-      </div>
-      <ProgressToward goal={goal} />
-      <div className="mt-6">
-        <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Rolling average</p>
-        <RollingChart goal={goal} />
-      </div>
-      <LastImpact goal={goal} />
-    </section>
-  );
-}
-
-function SecondaryGoal({ goal, onEdit }: { goal: CoachGoalProgress; onEdit: () => void }) {
-  return (
-    <section className="border border-border bg-surface p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            Secondary goal
-          </p>
-          <h3 className="mt-2 text-base font-semibold">{goal.label}</h3>
-        </div>
-        <Button size="sm" variant="ghost" onClick={onEdit}>
-          Edit
-        </Button>
-      </div>
-      <div className="mt-5 grid grid-cols-3 gap-3 text-sm">
-        <Value label="Current" value={display(goal.current)} />
-        <Value label="Target" value={display(goal.target)} />
-        <Value
-          label="Need"
-          value={goal.distanceToTarget === null ? "—" : display(goal.distanceToTarget)}
-        />
-      </div>
-      <p
-        className={
-          goal.status === "improving"
-            ? "mt-5 text-sm text-positive"
-            : "mt-5 text-sm text-muted-foreground"
-        }
-      >
-        {statusLabel(goal.status)}
-      </p>
-    </section>
-  );
-}
-
-function ChampionFocus({
-  champion,
-}: {
-  champion: { championName: string; games: number; winRate: number; kda: number; reason: string };
-}) {
-  return (
-    <section className="border border-border bg-surface p-5">
-      <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Champion focus</p>
-      <div className="mt-4 flex items-center gap-3">
-        <ChampionAvatar championName={champion.championName} />
-        <div>
-          <h3 className="font-semibold">{champion.championName}</h3>
-          <SampleSizeBadge games={champion.games} />
-        </div>
-      </div>
-      <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
-        <Value label="Games" value={String(champion.games)} />
-        <Value label="WR" value={pct(champion.winRate)} />
-        <Value label="KDA" value={nf(champion.kda, 2)} />
-      </div>
-      <p className="mt-4 text-xs text-muted-foreground">{champion.reason}</p>
-    </section>
-  );
-}
-
-function NextGames({ goals }: { goals: CoachGoalProgress[] }) {
-  return (
-    <section className="border border-border bg-surface p-5">
-      <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Next 5 games</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        {goals.slice(0, 3).map((goal) => (
-          <div key={goal.id} className="border-l-2 border-accent pl-3">
-            <p className="text-sm font-medium">{goal.label}</p>
-            <p className="mt-1 text-sm tabular-nums text-muted-foreground">
-              {comparisonText(goal.comparison)} {display(goal.target)}
-              {goal.champion ? " · " + goal.champion : ""}
-            </p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Milestone({ goal }: { goal: CoachGoalProgress }) {
-  const lower = goal.comparison === "lte" || goal.comparison === "lt";
-  const best = goal.history.reduce<number | null>(
-    (value, point) =>
-      value === null
-        ? point.value
-        : lower
-          ? Math.min(value, point.value)
-          : Math.max(value, point.value),
-    null,
-  );
-  return (
-    <section className="border border-border bg-surface p-5">
-      <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Personal context</p>
-      <p className="mt-4 text-sm text-muted-foreground">Best rolling {goal.periodGames}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">
-        {display(best)}{" "}
-        <span className="text-sm font-normal text-muted-foreground">
-          {goal.label.toLowerCase()}
-        </span>
-      </p>
-    </section>
-  );
-}
-
-function ProgressToward({ goal }: { goal: CoachGoalProgress }) {
-  const progress = goal.progressPercent ?? 0;
-  return (
-    <div className="mt-5">
-      <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-        <span>Progress toward goal</span>
-        <span className="tabular-nums">
-          {goal.progressPercent === null ? "No data" : nf(progress, 1) + "%"}
-        </span>
-      </div>
-      <div className="relative mt-2 h-2 bg-muted">
-        <div
-          className="h-full bg-accent transition-all duration-500"
-          style={{ width: Math.max(0, Math.min(100, progress)) + "%" }}
-        />
-      </div>
-      <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-        <span>Baseline {display(goal.baseline)}</span>
-        <span>Goal {display(goal.target)}</span>
-      </div>
-    </div>
-  );
-}
-function RollingChart({ goal }: { goal: CoachGoalProgress }) {
-  const data = goal.history.map((point) => ({
-    date: shortDate(point.gameCreation),
-    value: point.value,
-    target: goal.target,
-  }));
-  if (data.length < 2)
-    return <p className="py-10 text-sm text-muted-foreground">Not enough history yet.</p>;
-  return (
-    <div className="mt-3 h-52 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ left: -22, right: 8, top: 10, bottom: 0 }}>
-          <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="date"
-            tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-            minTickGap={32}
-          />
-          <YAxis
-            tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <Tooltip
-            contentStyle={{
-              background: "var(--popover)",
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-            }}
-            formatter={(value, name) => [
-              nf(Number(value), 2),
-              name === "value" ? goal.label : "Target",
-            ]}
-          />
-          <ReferenceLine y={goal.target} stroke="var(--warning)" strokeDasharray="4 4" />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke="var(--accent)"
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-function LastImpact({ goal }: { goal: CoachGoalProgress }) {
-  const impact = goal.lastMatchImpact;
-  const improved = impact.improved === true;
-  const worsened = impact.improved === false && impact.delta !== 0;
-  return (
-    <div className="mt-5 border-t border-border pt-5">
-      <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-        Latest match impact
-      </p>
-      <div className="mt-3 flex flex-wrap items-baseline gap-2">
-        <span className="text-lg font-semibold tabular-nums">{display(impact.previousValue)}</span>
-        <span className="text-muted-foreground">→</span>
-        <span className="text-lg font-semibold tabular-nums">{display(impact.currentValue)}</span>
-        {impact.delta !== null ? (
-          <span
-            className={
-              improved
-                ? "text-sm font-medium text-positive"
-                : worsened
-                  ? "text-sm font-medium text-warning"
-                  : "text-sm text-muted-foreground"
-            }
-          >
-            {signed(impact.delta)}
-          </span>
-        ) : null}
-      </div>
-      <p
-        className={
-          improved
-            ? "mt-1 text-sm text-positive"
-            : worsened
-              ? "mt-1 text-sm text-warning"
-              : "mt-1 text-sm text-muted-foreground"
-        }
-      >
-        {improved ? "Improved" : worsened ? "Moved away from goal" : "No directional change"}
-      </p>
-    </div>
-  );
-}
-
 function EditGoal({
   goal,
   saving,
@@ -698,19 +413,6 @@ function EditGoal({
   );
 }
 
-function display(value: number | null) {
-  return value === null ? "—" : nf(value, 2);
-}
-function signed(value: number) {
-  return (value > 0 ? "+" : "") + nf(value, 2);
-}
-function unitFor(metric: GoalMetric) {
-  return metric === "winRate"
-    ? "%"
-    : metric === "csPerMinute" || metric === "avgCsPerMinute"
-      ? "CS/min"
-      : "per game";
-}
 function scope(goal: CoachGoalProgress) {
   return (
     (goal.role ? roleLabel(goal.role) : "All roles") + " · last " + goal.periodGames + " games"
@@ -726,21 +428,4 @@ function comparisonText(comparison: CoachGoalProgress["comparison"]) {
         : comparison === "gt"
           ? ">"
           : "=";
-}
-function statusLabel(status: CoachGoalProgress["status"]) {
-  return status === "improving"
-    ? "Improving"
-    : status === "worsening"
-      ? "Needs attention"
-      : status === "achieved"
-        ? "On target"
-        : "Stable";
-}
-function Value({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 font-semibold tabular-nums">{value}</p>
-    </div>
-  );
 }
